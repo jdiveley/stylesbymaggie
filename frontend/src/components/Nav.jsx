@@ -1,6 +1,10 @@
+import { NavLink } from "react-router-dom"
 
 export const Nav = () => {
-
+    const activeLinkStyle = {
+        textDecoration: "underline",
+        color: "blue",
+    }
 return (
 
 
