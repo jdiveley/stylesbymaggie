@@ -7,14 +7,20 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "serve -s dist -l 8080"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
     "@tsparticles/react": "^3.0.0",
+    "axios": "^1.10.0",
+    "mongodb": "^6.17.0",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.10",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.3",
+    "serve": "^14.2.4",
     "tailwindcss": "^4.1.11",
     "tsparticles": "^3.8.1"
   },
