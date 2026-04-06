@@ -270,7 +270,7 @@ const UsersPanel = () => {
     } catch { toast.error('Update failed') }
   }
 
-  const ROLE_COLORS = { admin: 'bg-purple-100 text-purple-700', stylist: 'bg-blue-100 text-blue-700', customer: 'bg-gray-100 text-gray-600' }
+  const ROLE_COLORS = { admin: 'bg-purple-100 text-purple-700', owner: 'bg-gold-400/20 text-yellow-700', stylist: 'bg-blue-100 text-blue-700', customer: 'bg-gray-100 text-gray-600' }
 
   return (
     <div>
@@ -300,6 +300,7 @@ const UsersPanel = () => {
                     >
                       <option value="customer">customer</option>
                       <option value="stylist">stylist</option>
+                      <option value="owner">owner</option>
                       <option value="admin">admin</option>
                     </select>
                   </td>

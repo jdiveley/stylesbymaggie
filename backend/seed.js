@@ -20,7 +20,7 @@ const SEED_USERS = [
     username: 'maggie',
     email: 'maggie@stylesbymaggie.com',
     password: 'changeme',
-    role: 'stylist',
+    role: 'owner',
   },
 ]
 

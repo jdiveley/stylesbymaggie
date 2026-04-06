@@ -18,11 +18,12 @@ router.get('/', async (req, res, next) => {
   }
 })
 
-// GET /api/stylists/:id — public
-router.get('/:id', async (req, res, next) => {
+// GET /api/stylists/me — returns the calling user's own stylist profile
+// Must be registered BEFORE /:id to avoid Express treating "me" as an ID
+router.get('/me', requireAuth, async (req, res, next) => {
   try {
-    const stylist = await Stylist.findById(req.params.id).populate('userId', 'name email avatar')
-    if (!stylist) return res.status(404).json({ message: 'Stylist not found' })
+    const stylist = await Stylist.findOne({ userId: req.user.userId }).populate('userId', 'name email avatar')
+    if (!stylist) return res.status(404).json({ message: 'No stylist profile found for this account' })
     res.json(stylist)
   } catch (err) {
     next(err)
@@ -79,6 +80,40 @@ router.get('/:id/availability', async (req, res, next) => {
   }
 })
 
+// GET /api/stylists/:id — public
+router.get('/:id', async (req, res, next) => {
+  try {
+    const stylist = await Stylist.findById(req.params.id).populate('userId', 'name email avatar')
+    if (!stylist) return res.status(404).json({ message: 'Stylist not found' })
+    res.json(stylist)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// PATCH /api/stylists/:id/availability — self, owner, or admin
+router.patch('/:id/availability', requireAuth, async (req, res, next) => {
+  try {
+    const stylist = await Stylist.findById(req.params.id)
+    if (!stylist) return res.status(404).json({ message: 'Stylist not found' })
+
+    const isSelf = stylist.userId.toString() === req.user.userId
+    const isPrivileged = req.user.role === 'admin' || req.user.role === 'owner'
+    if (!isSelf && !isPrivileged) {
+      return res.status(403).json({ message: "Not authorised to update this stylist's availability" })
+    }
+
+    const { workingDays, workingHours } = req.body
+    if (workingDays !== undefined) stylist.workingDays = workingDays
+    if (workingHours !== undefined) stylist.workingHours = workingHours
+    await stylist.save()
+
+    res.json(stylist)
+  } catch (err) {
+    next(err)
+  }
+})
+
 // POST /api/stylists — admin only
 router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
@@ -93,8 +128,8 @@ router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
   }
 })
 
-// PUT /api/stylists/:id — admin only
-router.put('/:id', requireAuth, requireRole('admin'), async (req, res, next) => {
+// PUT /api/stylists/:id — admin or owner
+router.put('/:id', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
     const stylist = await Stylist.findByIdAndUpdate(req.params.id, req.body, { new: true })
     if (!stylist) return res.status(404).json({ message: 'Stylist not found' })

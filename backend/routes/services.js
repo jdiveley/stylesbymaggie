@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
 })
 
 // POST /api/services — admin only
-router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
+router.post('/', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
     const { name, description, priceCents, durationMinutes, category, imageUrl } = req.body
     if (!name || priceCents == null || !durationMinutes) {
@@ -33,7 +33,7 @@ router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
 })
 
 // PUT /api/services/:id — admin only
-router.put('/:id', requireAuth, requireRole('admin'), async (req, res, next) => {
+router.put('/:id', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
     const service = await Service.findByIdAndUpdate(req.params.id, req.body, { new: true })
     if (!service) return res.status(404).json({ message: 'Service not found' })
@@ -44,7 +44,7 @@ router.put('/:id', requireAuth, requireRole('admin'), async (req, res, next) => 
 })
 
 // DELETE /api/services/:id — admin only (soft delete)
-router.delete('/:id', requireAuth, requireRole('admin'), async (req, res, next) => {
+router.delete('/:id', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
     const service = await Service.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true })
     if (!service) return res.status(404).json({ message: 'Service not found' })
@@ -55,7 +55,7 @@ router.delete('/:id', requireAuth, requireRole('admin'), async (req, res, next) 
 })
 
 // PATCH /api/services/reorder — admin only
-router.patch('/reorder', requireAuth, requireRole('admin'), async (req, res, next) => {
+router.patch('/reorder', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
     const { order } = req.body // [{ id, displayOrder }]
     await Promise.all(

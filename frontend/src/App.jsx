@@ -55,7 +55,7 @@ export const App = () => {
             <Route
               path="/manager"
               element={
-                <ProtectedRoute roles={['admin', 'stylist']}>
+                <ProtectedRoute roles={['admin', 'owner', 'stylist']}>
                   <ManagerDashboard />
                 </ProtectedRoute>
               }

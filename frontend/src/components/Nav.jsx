@@ -96,7 +96,7 @@ export const Nav = () => {
                     >
                       Book Appointment
                     </NavLink>
-                    {(user.role === 'stylist' || user.role === 'admin') && (
+                    {(user.role === 'stylist' || user.role === 'owner' || user.role === 'admin') && (
                       <NavLink
                         to="/manager"
                         onClick={() => { setDropdownOpen(false); setMenuOpen(false) }}

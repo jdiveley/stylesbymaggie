@@ -20,7 +20,7 @@ router.get('/', requireAuth, requireRole('admin'), async (req, res, next) => {
 router.put('/:id/role', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
     const { role } = req.body
-    if (!['customer', 'stylist', 'admin'].includes(role)) {
+    if (!['customer', 'stylist', 'owner', 'admin'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role' })
     }
     const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-passwordHash')
