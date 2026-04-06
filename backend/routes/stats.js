@@ -7,7 +7,7 @@ import { requireAuth, requireRole } from '../middleware/auth.js'
 const router = Router()
 
 // GET /api/stats — admin only
-router.get('/', requireAuth, requireRole('admin'), async (req, res, next) => {
+router.get('/', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
     const [totalBookings, pendingBookings, completedBookings, totalCustomers, totalServices] =
       await Promise.all([

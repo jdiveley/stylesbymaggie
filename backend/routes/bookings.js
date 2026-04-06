@@ -66,7 +66,7 @@ router.get('/my', requireAuth, async (req, res, next) => {
 })
 
 // GET /api/bookings — admin: all bookings with optional filters
-router.get('/', requireAuth, requireRole('admin', 'stylist'), async (req, res, next) => {
+router.get('/', requireAuth, requireRole('admin', 'owner', 'stylist'), async (req, res, next) => {
   try {
     const filter = {}
     if (req.query.status) filter.status = req.query.status
@@ -93,7 +93,7 @@ router.get('/', requireAuth, requireRole('admin', 'stylist'), async (req, res, n
 })
 
 // PATCH /api/bookings/:id/status — stylist or admin
-router.patch('/:id/status', requireAuth, requireRole('admin', 'stylist'), async (req, res, next) => {
+router.patch('/:id/status', requireAuth, requireRole('admin', 'owner', 'stylist'), async (req, res, next) => {
   try {
     const { status } = req.body
     const allowed = ['pending', 'confirmed', 'completed', 'cancelled', 'no-show']
