@@ -13,15 +13,11 @@ export const ParticlesComponent = (props) => {
         });
     }, []);
 
-    const particlesLoaded = (container) => {
-        console.log(container);
-    };
-
     const options = useMemo(
         () => ({
             background: {
                 color: {
-                    value: "#000000",
+                    value: "#0d1a0f",
                 },
             },
             fpsLimit: 120,
@@ -48,10 +44,10 @@ export const ParticlesComponent = (props) => {
             },
             particles: {
                 color: {
-                    value: "#ffffff",
+                    value: "#C9A84C",
                 },
                 links: {
-                    color: "#ffffff",
+                    color: "#C9A84C",
                     distance: 150,
                     enable: true,
                     opacity: 0.5,
@@ -91,9 +87,8 @@ export const ParticlesComponent = (props) => {
     if (init) {
         return (
             <Particles
-                classNamer={props.className}
+                className={props.className}
                 id={props.id}
-                particlesLoaded={particlesLoaded}
                 options={options}
             />
         );

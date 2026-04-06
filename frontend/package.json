@@ -1,7 +1,7 @@
 {
-  "name": "test",
+  "name": "styles-by-maggie",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,14 +11,14 @@
     "start": "serve -s dist -l 8080"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.4",
     "@tailwindcss/vite": "^4.1.11",
     "@tsparticles/react": "^3.0.0",
     "axios": "^1.10.0",
-    "mongodb": "^6.17.0",
-    "morgan": "^1.10.0",
-    "nodemon": "^3.1.10",
+    "date-fns": "^4.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.6.3",
     "serve": "^14.2.4",
     "tailwindcss": "^4.1.11",

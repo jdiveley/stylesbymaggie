@@ -1,4 +1,1 @@
-@import "tailwindcss";
-@theme {
-  --color-pink-400: oklch(0.72 0.11 178);
-}
+/* App-level styles — theme tokens are in index.css */

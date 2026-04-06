@@ -1,6 +1,4 @@
-import React from 'react'
-
-export function Feedback() {
+export const Feedback = () => {
   return (
     <div>Feedback</div>
   )
