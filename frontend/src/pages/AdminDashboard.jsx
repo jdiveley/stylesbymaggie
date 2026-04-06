@@ -314,8 +314,308 @@ const UsersPanel = () => {
   )
 }
 
+// ── Stylists Panel ───────────────────────────────────────────────────
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+const BLANK_STYLIST_FORM = {
+  // user fields
+  mode: 'new', // 'new' | 'existing'
+  existingUserId: '',
+  name: '', username: '', email: '', password: '',
+  // profile fields
+  bio: '', specialties: '',
+  workingDays: [1, 2, 3, 4, 5],
+  startTime: '09:00', endTime: '17:00',
+}
+
+const StylistsPanel = () => {
+  const [stylists, setStylists] = useState([])
+  const [users, setUsers] = useState([]) // users without a stylist profile
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState(BLANK_STYLIST_FORM)
+  const [saving, setSaving] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({})
+
+  const loadData = useCallback(async () => {
+    try {
+      const [stRes, uRes] = await Promise.all([api.get('/stylists'), api.get('/users')])
+      setStylists(stRes.data)
+      // Users who don't already have a stylist profile
+      const stylistUserIds = new Set(stRes.data.map((s) => s.userId?._id))
+      setUsers(uRes.data.filter((u) => !stylistUserIds.has(u._id)))
+    } catch { toast.error('Failed to load data') }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  const toggleDay = (day, days, setDays) => {
+    setDays(days.includes(day) ? days.filter((d) => d !== day) : [...days, day].sort((a, b) => a - b))
+  }
+
+  const handleAdd = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      let userId = form.existingUserId
+      if (form.mode === 'new') {
+        const uRes = await api.post('/users', {
+          name: form.name,
+          username: form.username || undefined,
+          email: form.email || undefined,
+          password: form.password,
+          role: 'stylist',
+        })
+        userId = uRes.data._id
+      }
+      await api.post('/stylists', {
+        userId,
+        bio: form.bio,
+        specialties: form.specialties.split(',').map((s) => s.trim()).filter(Boolean),
+        workingDays: form.workingDays,
+        workingHours: { start: form.startTime, end: form.endTime },
+      })
+      toast.success('Stylist added')
+      setShowForm(false)
+      setForm(BLANK_STYLIST_FORM)
+      loadData()
+    } catch (err) {
+      toast.error(err.response?.data?.message ?? 'Failed to add stylist')
+    } finally { setSaving(false) }
+  }
+
+  const startEdit = (s) => {
+    setEditingId(s._id)
+    setEditForm({
+      bio: s.bio ?? '',
+      specialties: (s.specialties ?? []).join(', '),
+      workingDays: [...s.workingDays],
+      startTime: s.workingHours.start,
+      endTime: s.workingHours.end,
+    })
+  }
+
+  const saveEdit = async (id) => {
+    setSaving(true)
+    try {
+      await api.put(`/stylists/${id}`, {
+        bio: editForm.bio,
+        specialties: editForm.specialties.split(',').map((s) => s.trim()).filter(Boolean),
+        workingDays: editForm.workingDays,
+        workingHours: { start: editForm.startTime, end: editForm.endTime },
+      })
+      toast.success('Stylist updated')
+      setEditingId(null)
+      loadData()
+    } catch { toast.error('Failed to update stylist') }
+    finally { setSaving(false) }
+  }
+
+  const handleDeactivate = async (id) => {
+    if (!window.confirm('Deactivate this stylist profile?')) return
+    try {
+      await api.delete(`/stylists/${id}`)
+      toast.success('Stylist deactivated')
+      loadData()
+    } catch { toast.error('Failed to deactivate stylist') }
+  }
+
+  if (loading) return <p className="text-gray-400 text-sm">Loading…</p>
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-gray-500">{stylists.length} active stylist{stylists.length !== 1 ? 's' : ''}</p>
+        <button
+          onClick={() => { setShowForm((v) => !v); setForm(BLANK_STYLIST_FORM) }}
+          className="px-4 py-2 bg-sage-400 hover:bg-sage-500 text-white text-sm font-semibold rounded-lg transition-colors"
+        >
+          {showForm ? 'Cancel' : '+ Add Stylist'}
+        </button>
+      </div>
+
+      {/* Add stylist form */}
+      {showForm && (
+        <form onSubmit={handleAdd} className="bg-sage-50 border border-sage-200 rounded-xl p-5 space-y-4">
+          <h3 className="font-semibold text-sage-600">New Stylist</h3>
+
+          {/* Mode toggle */}
+          <div className="flex gap-2">
+            {['new', 'existing'].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, mode: m }))}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                  form.mode === m ? 'bg-sage-400 text-white border-sage-400' : 'bg-white text-gray-600 border-gray-300 hover:border-sage-400'
+                }`}
+              >
+                {m === 'new' ? 'Create new account' : 'Link existing user'}
+              </button>
+            ))}
+          </div>
+
+          {form.mode === 'new' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input required placeholder="Full name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+              <input placeholder="Username" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+              <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+              <input required type="password" placeholder="Temporary password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Select existing user</label>
+              <select required value={form.existingUserId} onChange={(e) => setForm((f) => ({ ...f, existingUserId: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                <option value="">— choose a user —</option>
+                {users.map((u) => (
+                  <option key={u._id} value={u._id}>{u.name} ({u.email ?? u.username})</option>
+                ))}
+              </select>
+              {users.length === 0 && <p className="text-xs text-gray-400 mt-1">All users already have stylist profiles.</p>}
+            </div>
+          )}
+
+          <div className="border-t border-sage-200 pt-3 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Stylist Profile</p>
+            <textarea placeholder="Bio (optional)" value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none" />
+            <input placeholder="Specialties (comma-separated)" value={form.specialties} onChange={(e) => setForm((f) => ({ ...f, specialties: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+            <div>
+              <p className="text-xs font-medium text-gray-600 mb-1">Working Days</p>
+              <div className="flex gap-2 flex-wrap">
+                {DAY_NAMES.map((name, idx) => (
+                  <button key={idx} type="button"
+                    onClick={() => toggleDay(idx, form.workingDays, (days) => setForm((f) => ({ ...f, workingDays: days })))}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                      form.workingDays.includes(idx) ? 'bg-sage-400 text-white border-sage-400' : 'bg-white text-gray-600 border-gray-300 hover:border-sage-400'
+                    }`}
+                  >{name}</button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Start Time</label>
+                <input type="time" value={form.startTime} onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">End Time</label>
+                <input type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" disabled={saving}
+            className="px-5 py-2 bg-sage-400 hover:bg-sage-500 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors">
+            {saving ? 'Adding…' : 'Add Stylist'}
+          </button>
+        </form>
+      )}
+
+      {/* Stylist list */}
+      {stylists.length === 0 && !showForm ? (
+        <p className="text-center text-gray-400 text-sm py-8">No stylists yet — add one above.</p>
+      ) : (
+        <div className="space-y-3">
+          {stylists.map((s) => (
+            <div key={s._id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              {editingId === s._id ? (
+                <div className="space-y-3">
+                  <p className="font-semibold text-gray-800">{s.userId?.name}</p>
+                  <textarea placeholder="Bio" value={editForm.bio} onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))} rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none" />
+                  <input placeholder="Specialties (comma-separated)" value={editForm.specialties} onChange={(e) => setEditForm((f) => ({ ...f, specialties: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-1">Working Days</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {DAY_NAMES.map((name, idx) => (
+                        <button key={idx} type="button"
+                          onClick={() => toggleDay(idx, editForm.workingDays, (days) => setEditForm((f) => ({ ...f, workingDays: days })))}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                            editForm.workingDays.includes(idx) ? 'bg-sage-400 text-white border-sage-400' : 'bg-white text-gray-600 border-gray-300 hover:border-sage-400'
+                          }`}
+                        >{name}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 block mb-1">Start Time</label>
+                      <input type="time" value={editForm.startTime} onChange={(e) => setEditForm((f) => ({ ...f, startTime: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 block mb-1">End Time</label>
+                      <input type="time" value={editForm.endTime} onChange={(e) => setEditForm((f) => ({ ...f, endTime: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => saveEdit(s._id)} disabled={saving}
+                      className="px-4 py-1.5 bg-sage-400 hover:bg-sage-500 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors">
+                      {saving ? 'Saving…' : 'Save'}
+                    </button>
+                    <button onClick={() => setEditingId(null)}
+                      className="px-4 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-lg hover:bg-gray-200 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-sage-100 flex items-center justify-center text-sage-500 font-bold text-lg flex-shrink-0">
+                      {(s.userId?.name ?? 'S')[0]}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-800">{s.userId?.name ?? 'Stylist'}</div>
+                      <div className="text-xs text-gray-500">{s.userId?.email}</div>
+                      {s.bio && <p className="text-sm text-gray-500 mt-1">{s.bio}</p>}
+                      {s.specialties?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {s.specialties.map((sp) => (
+                            <span key={sp} className="px-2 py-0.5 bg-sage-50 text-sage-500 text-xs rounded-full">{sp}</span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-400 mt-1">
+                        {s.workingDays.map((d) => DAY_NAMES[d]).join(', ')} &middot; {s.workingHours.start}–{s.workingHours.end}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => startEdit(s)}
+                      className="px-3 py-1.5 bg-sage-50 text-sage-600 text-xs font-medium rounded-lg hover:bg-sage-100 transition-colors">
+                      Edit
+                    </button>
+                    <button onClick={() => handleDeactivate(s._id)}
+                      className="px-3 py-1.5 bg-red-50 text-red-500 text-xs font-medium rounded-lg hover:bg-red-100 transition-colors">
+                      Deactivate
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Admin Dashboard ──────────────────────────────────────────────────
-const TABS = ['Overview', 'Services', 'Bookings', 'Users']
+const TABS = ['Overview', 'Services', 'Bookings', 'Users', 'Stylists']
 
 export const AdminDashboard = () => {
   const [tab, setTab] = useState('Overview')
@@ -330,7 +630,7 @@ export const AdminDashboard = () => {
       <h1 className="text-3xl font-bold text-white drop-shadow mb-6">Admin Dashboard</h1>
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6">
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 border-b border-gray-200 pb-0">
+        <div className="flex gap-1 mb-6 border-b border-gray-200 pb-0 flex-wrap">
           {TABS.map((t) => (
             <button
               key={t}
@@ -347,6 +647,7 @@ export const AdminDashboard = () => {
         {tab === 'Services' && <ServicesPanel />}
         {tab === 'Bookings' && <BookingsPanel />}
         {tab === 'Users' && <UsersPanel />}
+        {tab === 'Stylists' && <StylistsPanel />}
       </div>
     </div>
   )

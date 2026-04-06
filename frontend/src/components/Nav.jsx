@@ -105,7 +105,7 @@ export const Nav = () => {
                         Manager Dashboard
                       </NavLink>
                     )}
-                    {user.role === 'admin' && (
+                    {(user.role === 'admin' || user.role === 'owner') && (
                       <NavLink
                         to="/admin"
                         onClick={() => { setDropdownOpen(false); setMenuOpen(false) }}

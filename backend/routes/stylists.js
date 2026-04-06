@@ -114,8 +114,8 @@ router.patch('/:id/availability', requireAuth, async (req, res, next) => {
   }
 })
 
-// POST /api/stylists — admin only
-router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
+// POST /api/stylists — admin or owner
+router.post('/', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
     const { userId, bio, specialties, workingDays, workingHours } = req.body
     if (!userId) return res.status(400).json({ message: 'userId is required' })
