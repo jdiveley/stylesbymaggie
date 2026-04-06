@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { format, addDays, isToday, isBefore, startOfDay } from 'date-fns'
+import { format, addDays, addMinutes, parse, isBefore } from 'date-fns'
 import toast from 'react-hot-toast'
 import api from '../lib/axios'
 
@@ -16,6 +16,23 @@ const FALLBACK_SERVICES = [
 ]
 
 const STEPS = ['Select Service', 'Date & Stylist', 'Confirm']
+
+// Generate every possible slot from stylist hours at service-duration increments
+const buildAllSlots = (stylist, service, date) => {
+  const base = new Date(date)
+  const start = parse(stylist.workingHours.start, 'HH:mm', base)
+  const end = parse(stylist.workingHours.end, 'HH:mm', base)
+  const slots = []
+  let cursor = start
+  while (
+    isBefore(addMinutes(cursor, service.durationMinutes), end) ||
+    addMinutes(cursor, service.durationMinutes).getTime() === end.getTime()
+  ) {
+    slots.push(format(cursor, 'HH:mm'))
+    cursor = addMinutes(cursor, service.durationMinutes)
+  }
+  return slots
+}
 
 const StepIndicator = ({ current }) => (
   <div className="flex items-center justify-center gap-0 mb-8">
@@ -73,50 +90,49 @@ const StepService = ({ services, selected, onSelect, onNext }) => (
 
 // Step 2: Date & Stylist & Time
 const StepDateTime = ({ service, stylists, selection, onUpdate, onNext, onBack }) => {
-  const [slots, setSlots] = useState([])
+  const [availableSlots, setAvailableSlots] = useState([])
+  const [allSlots, setAllSlots] = useState([])
   const [loadingSlots, setLoadingSlots] = useState(false)
 
+  const selectedStylist = stylists.find((s) => s._id === selection.stylistId)
   const dates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1))
 
+  // A date is a working day for the selected stylist
+  const isWorkingDay = (d) => {
+    if (!selectedStylist) return true // no stylist yet — don't pre-grey dates
+    return selectedStylist.workingDays.includes(d.getDay())
+  }
+
   useEffect(() => {
-    if (!selection.date || !selection.stylistId) { setSlots([]); return }
+    if (!selection.date || !selection.stylistId || !selectedStylist) {
+      setAvailableSlots([])
+      setAllSlots([])
+      return
+    }
+
+    // Build full slot list from stylist working hours client-side
+    const all = buildAllSlots(selectedStylist, service, selection.date)
+    setAllSlots(all)
+
     setLoadingSlots(true)
     api.get(`/stylists/${selection.stylistId}/availability`, {
       params: { date: format(selection.date, 'yyyy-MM-dd'), serviceId: service._id },
     })
-      .then((res) => setSlots(res.data))
-      .catch(() => setSlots(['09:00','09:30','10:00','10:30','11:00','14:00','14:30','15:00','15:30','16:00']))
+      .then((res) => setAvailableSlots(res.data))
+      .catch(() => setAvailableSlots(all)) // on error show all as available
       .finally(() => setLoadingSlots(false))
-  }, [selection.date, selection.stylistId, service._id])
+  }, [selection.date, selection.stylistId, service._id, selectedStylist])
+
+  const handleDateClick = (d) => {
+    if (!isWorkingDay(d)) return
+    onUpdate({ date: d, timeSlot: null })
+  }
 
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-800 mb-4">Pick a Date & Stylist</h2>
 
-      {/* Date picker */}
-      <div className="mb-4">
-        <p className="text-sm font-medium text-gray-600 mb-2">Select Date</p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {dates.map((d) => {
-            const selected = selection.date && format(d, 'yyyy-MM-dd') === format(selection.date, 'yyyy-MM-dd')
-            return (
-              <button
-                key={d.toISOString()}
-                onClick={() => onUpdate({ date: d, timeSlot: null })}
-                className={`flex-shrink-0 flex flex-col items-center p-2 rounded-xl border-2 w-14 transition-all ${
-                  selected ? 'border-sage-400 bg-sage-50' : 'border-gray-200 hover:border-sage-200 bg-white'
-                }`}
-              >
-                <span className="text-xs text-gray-500">{format(d, 'EEE')}</span>
-                <span className="text-lg font-bold text-gray-800">{format(d, 'd')}</span>
-                <span className="text-xs text-gray-400">{format(d, 'MMM')}</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Stylist picker */}
+      {/* Stylist picker — shown first so working days are known before date selection */}
       <div className="mb-4">
         <p className="text-sm font-medium text-gray-600 mb-2">Select Stylist</p>
         {stylists.length === 0 ? (
@@ -125,13 +141,13 @@ const StepDateTime = ({ service, stylists, selection, onUpdate, onNext, onBack }
           <div className="flex gap-2 flex-wrap">
             {stylists.map((st) => {
               const name = st.userId?.name ?? 'Stylist'
-              const selected = selection.stylistId === st._id
+              const isSelected = selection.stylistId === st._id
               return (
                 <button
                   key={st._id}
-                  onClick={() => onUpdate({ stylistId: st._id, timeSlot: null })}
+                  onClick={() => onUpdate({ stylistId: st._id, date: null, timeSlot: null })}
                   className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                    selected ? 'border-sage-400 bg-sage-50 text-sage-600' : 'border-gray-200 hover:border-sage-200 bg-white text-gray-700'
+                    isSelected ? 'border-sage-400 bg-sage-50 text-sage-600' : 'border-gray-200 hover:border-sage-200 bg-white text-gray-700'
                   }`}
                 >
                   {name}
@@ -142,32 +158,80 @@ const StepDateTime = ({ service, stylists, selection, onUpdate, onNext, onBack }
         )}
       </div>
 
+      {/* Date picker */}
+      <div className="mb-4">
+        <p className="text-sm font-medium text-gray-600 mb-2">Select Date</p>
+        {selectedStylist && (
+          <p className="text-xs text-gray-400 mb-2">
+            Works: {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].filter((_, i) => selectedStylist.workingDays.includes(i)).join(', ')}
+          </p>
+        )}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {dates.map((d) => {
+            const working = isWorkingDay(d)
+            const isSelected = selection.date && format(d, 'yyyy-MM-dd') === format(selection.date, 'yyyy-MM-dd')
+            return (
+              <button
+                key={d.toISOString()}
+                onClick={() => handleDateClick(d)}
+                disabled={!working}
+                title={!working ? 'Not a working day' : undefined}
+                className={`flex-shrink-0 flex flex-col items-center p-2 rounded-xl border-2 w-14 transition-all ${
+                  !working
+                    ? 'border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed'
+                    : isSelected
+                    ? 'border-sage-400 bg-sage-50'
+                    : 'border-gray-200 hover:border-sage-200 bg-white cursor-pointer'
+                }`}
+              >
+                <span className="text-xs text-gray-500">{format(d, 'EEE')}</span>
+                <span className={`text-lg font-bold ${working ? 'text-gray-800' : 'text-gray-400'}`}>{format(d, 'd')}</span>
+                <span className="text-xs text-gray-400">{format(d, 'MMM')}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Time slots */}
       {selection.date && selection.stylistId && (
         <div className="mb-4">
           <p className="text-sm font-medium text-gray-600 mb-2">Available Times</p>
           {loadingSlots ? (
-            <div className="flex gap-2">
-              {[...Array(6)].map((_, i) => <div key={i} className="h-9 w-16 bg-gray-200 rounded-lg animate-pulse" />)}
+            <div className="flex gap-2 flex-wrap">
+              {[...Array(8)].map((_, i) => <div key={i} className="h-9 w-16 bg-gray-200 rounded-lg animate-pulse" />)}
             </div>
-          ) : slots.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">No availability for this date — try another day.</p>
+          ) : allSlots.length === 0 ? (
+            <p className="text-sm text-gray-400 italic">No time slots for this day — the stylist may not work these hours.</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {slots.map((slot) => (
-                <button
-                  key={slot}
-                  onClick={() => onUpdate({ timeSlot: slot })}
-                  className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
-                    selection.timeSlot === slot
-                      ? 'bg-sage-400 text-white border-sage-400'
-                      : 'bg-white border-gray-200 hover:border-sage-300 text-gray-700'
-                  }`}
-                >
-                  {slot}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="flex flex-wrap gap-2">
+                {allSlots.map((slot) => {
+                  const isAvailable = availableSlots.includes(slot)
+                  const isSelected = selection.timeSlot === slot
+                  return (
+                    <button
+                      key={slot}
+                      onClick={() => isAvailable && onUpdate({ timeSlot: slot })}
+                      disabled={!isAvailable}
+                      title={!isAvailable ? 'Already booked' : undefined}
+                      className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                        !isAvailable
+                          ? 'bg-gray-50 border-gray-200 text-gray-300 cursor-not-allowed line-through'
+                          : isSelected
+                          ? 'bg-sage-400 text-white border-sage-400'
+                          : 'bg-white border-gray-200 hover:border-sage-300 text-gray-700 cursor-pointer'
+                      }`}
+                    >
+                      {slot}
+                    </button>
+                  )
+                })}
+              </div>
+              {availableSlots.length === 0 && (
+                <p className="text-sm text-red-400 mt-2 italic">All slots are booked for this day — please choose another date.</p>
+              )}
+            </>
           )}
         </div>
       )}
@@ -264,7 +328,6 @@ export const Booking = () => {
         const svcs = sRes.data.length ? sRes.data : FALLBACK_SERVICES
         setServices(svcs)
         setStylists(stRes.data)
-        // Pre-select service if passed via navigation state
         const preId = location.state?.serviceId
         if (preId) {
           const pre = svcs.find((s) => s._id === preId)
