@@ -1,3 +1,4 @@
+node_modules/
 .mcp.json
 .env
 backend/seed.js
