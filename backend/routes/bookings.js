@@ -3,7 +3,7 @@ import { addMinutes, format, parse } from 'date-fns'
 import Booking from '../models/Booking.js'
 import Service from '../models/Service.js'
 import { requireAuth, optionalAuth, requireRole } from '../middleware/auth.js'
-import { isValidId, isValidTime, isValidDate, isValidEmail, sanitizeStr } from '../middleware/validate.js'
+import { isValidId, isValidTime, isValidDate, isValidEmail, isValidPhone, sanitizeStr } from '../middleware/validate.js'
 
 const router = Router()
 
@@ -31,10 +31,11 @@ router.post('/', optionalAuth, async (req, res, next) => {
 
     // Auth: either logged-in user or valid guest info
     if (!req.user) {
-      if (!guestName) return res.status(400).json({ message: 'guestName is required for guest bookings' })
+      if (!guestName)  return res.status(400).json({ message: 'guestName is required for guest bookings' })
       if (!guestEmail) return res.status(400).json({ message: 'guestEmail is required for guest bookings' })
       if (!isValidEmail(guestEmail)) return res.status(400).json({ message: 'Invalid guestEmail' })
-      if (guestPhone && guestPhone.length > 30) return res.status(400).json({ message: 'Phone number too long' })
+      if (!guestPhone) return res.status(400).json({ message: 'guestPhone is required for guest bookings' })
+      if (!isValidPhone(guestPhone)) return res.status(400).json({ message: 'Invalid guestPhone — enter a valid phone number' })
     }
 
     const service = await Service.findById(serviceId)

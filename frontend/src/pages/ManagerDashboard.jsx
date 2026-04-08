@@ -45,6 +45,9 @@ const TodaySchedule = ({ bookings }) => {
             {(b.guestEmail ?? b.customerId?.email) && (
               <div className="text-xs text-gray-400">{b.guestEmail ?? b.customerId?.email}</div>
             )}
+            {b.guestPhone && (
+              <div className="text-xs text-gray-400">{b.guestPhone}</div>
+            )}
             <div className="text-sm text-gray-500">{b.serviceId?.name ?? 'Service'}</div>
             {b.notes && <div className="text-xs text-gray-400 mt-1 italic">"{b.notes}"</div>}
           </div>

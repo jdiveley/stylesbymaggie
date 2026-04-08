@@ -319,15 +319,36 @@ const StepDateTime = ({ totalDuration, primaryService, stylists, selection, onUp
   )
 }
 
+// ── Phone formatting helpers ────────────────────────────────────────────────
+// Accepts digits only, formats as (XXX) XXX-XXXX for US numbers
+const formatPhone = (raw) => {
+  const digits = raw.replace(/\D/g, '').slice(0, 10)
+  if (digits.length <= 3)  return digits
+  if (digits.length <= 6)  return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
+// Valid if exactly 10 digits (US) or 7–15 digits with optional leading +
+const isValidPhone = (val) => {
+  const digits = val.replace(/\D/g, '')
+  return digits.length >= 7 && digits.length <= 15
+}
+
 // ── Step 3 (guest only): Contact details ────────────────────────────────────
 const StepGuestDetails = ({ guest, onUpdate, onNext, onBack }) => {
   const [errors, setErrors] = useState({})
+
+  const handlePhoneChange = (e) => {
+    onUpdate({ phone: formatPhone(e.target.value) })
+  }
 
   const validate = () => {
     const e = {}
     if (!guest.name.trim())  e.name  = 'Name is required'
     if (!guest.email.trim()) e.email = 'Email is required'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guest.email)) e.email = 'Enter a valid email'
+    if (!guest.phone.trim())         e.phone = 'Phone number is required'
+    else if (!isValidPhone(guest.phone)) e.phone = 'Enter a valid phone number'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -338,7 +359,7 @@ const StepGuestDetails = ({ guest, onUpdate, onNext, onBack }) => {
     <div>
       <h2 className="text-base font-semibold text-sage-100 mb-1">Your Details</h2>
       <p className="text-sage-400/70 text-xs mb-5">
-        We'll send your confirmation to the email below.
+        We'll use these to confirm your appointment.
       </p>
 
       {/* Sign-in nudge */}
@@ -378,15 +399,21 @@ const StepGuestDetails = ({ guest, onUpdate, onNext, onBack }) => {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-sage-400 mb-1.5">Phone <span className="text-sage-600">(optional)</span></label>
+          <label className="block text-xs font-medium text-sage-400 mb-1.5">
+            Phone Number <span className="text-red-400">*</span>
+          </label>
           <input
             type="tel"
             value={guest.phone}
-            onChange={(e) => onUpdate({ phone: e.target.value })}
+            onChange={handlePhoneChange}
             placeholder="(555) 000-0000"
-            maxLength={30}
+            maxLength={16}
             className={inputCls}
           />
+          {errors.phone
+            ? <p className="text-red-400/80 text-xs mt-1">{errors.phone}</p>
+            : <p className="text-sage-600/60 text-xs mt-1">US format auto-applied · international numbers accepted</p>
+          }
         </div>
       </div>
 
@@ -448,7 +475,7 @@ const StepConfirm = ({ selection, addOns, stylists, guest, isGuest, onBack, onCo
           <div className="border-t border-sage-600/20 pt-3 space-y-2">
             <Row label="Name"  value={guest.name} />
             <Row label="Email" value={guest.email} />
-            {guest.phone && <Row label="Phone" value={guest.phone} />}
+            <Row label="Phone" value={guest.phone} />
           </div>
         )}
 
@@ -563,7 +590,7 @@ export const Booking = () => {
       if (isGuest) {
         body.guestName  = guest.name.trim()
         body.guestEmail = guest.email.trim()
-        body.guestPhone = guest.phone.trim() || undefined
+        body.guestPhone = guest.phone.trim()
       }
 
       await api.post('/bookings', body)

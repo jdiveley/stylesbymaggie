@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../lib/axios'
+import { useAuth } from '../context/AuthContext'
+import { BookingGateModal } from '../components/BookingGateModal'
 
 // Curated Unsplash hairstyle photos per service name (lowercase) and category
 const SERVICE_PHOTOS = {
@@ -66,6 +68,9 @@ const ServiceCard = ({ service, onBook }) => (
 
 export const Home = () => {
   const [services, setServices] = useState(FALLBACK_SERVICES)
+  const [gateService, setGateService] = useState(null) // null = modal closed
+  const [gateOpen, setGateOpen] = useState(false)
+  const { user } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -74,15 +79,30 @@ export const Home = () => {
       .catch(() => {})
   }, [])
 
-  // Navigate to booking (ProtectedRoute handles login redirect automatically)
+  // If logged in, go straight to booking; otherwise show the gate modal
   const handleBookService = (service) => {
-    navigate('/book', { state: { serviceId: service._id } })
+    if (user) {
+      navigate('/book', { state: { serviceId: service._id } })
+    } else {
+      setGateService(service)
+      setGateOpen(true)
+    }
+  }
+
+  const handleBookGeneric = () => {
+    if (user) {
+      navigate('/book')
+    } else {
+      setGateService(null)
+      setGateOpen(true)
+    }
   }
 
   // Duplicate for seamless infinite scroll
   const ticker = [...services, ...services]
 
   return (
+    <>
     <div className="flex flex-col">
 
       {/* ── Hero ── */}
@@ -137,12 +157,12 @@ export const Home = () => {
 
           {/* CTAs */}
           <div className="flex flex-wrap gap-4">
-            <Link
-              to="/book"
+            <button
+              onClick={handleBookGeneric}
               className="px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-[#0d1a0f] font-semibold text-sm tracking-wide rounded-full transition-all duration-200 shadow-lg shadow-gold-500/20 hover:shadow-gold-400/30"
             >
               Book an Appointment
-            </Link>
+            </button>
             <Link
               to="/services"
               className="px-8 py-3.5 border border-sage-600/50 hover:border-sage-400/70 text-sage-200 hover:text-sage-50 text-sm tracking-wide rounded-full transition-all duration-200"
@@ -238,17 +258,26 @@ export const Home = () => {
       {/* ── Footer CTA ── */}
       <section className="border-t border-sage-600/20 py-16 px-8 text-center">
         <p className="text-sage-400/60 text-sm mb-6">Ready to transform your look?</p>
-        <Link
-          to="/book"
+        <button
+          onClick={handleBookGeneric}
           className="inline-block px-10 py-4 bg-sage-600/30 hover:bg-gold-500 border border-sage-500/40 hover:border-gold-500 text-sage-100 hover:text-[#0d1a0f] font-semibold text-sm tracking-wide rounded-full transition-all duration-300"
         >
           Book Your Appointment
-        </Link>
+        </button>
         <p className="text-sage-600/40 text-xs mt-8">
           © {new Date().getFullYear()} Styles by Maggie · All rights reserved
         </p>
       </section>
 
     </div>
+
+    {/* Login-or-guest gate */}
+    {gateOpen && (
+      <BookingGateModal
+        service={gateService}
+        onClose={() => setGateOpen(false)}
+      />
+    )}
+    </>
   )
 }

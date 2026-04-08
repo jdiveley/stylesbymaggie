@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../lib/axios'
+import { useAuth } from '../context/AuthContext'
+import { BookingGateModal } from '../components/BookingGateModal'
 
 const SERVICE_PHOTOS = {
   "women's haircut":   "https://images.unsplash.com/photo-1560869713-7d0a29430803?auto=format&fit=crop&w=420&h=280&q=80",
@@ -80,6 +82,9 @@ export const Services = () => {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('all')
+  const [gateService, setGateService] = useState(null)
+  const [gateOpen, setGateOpen] = useState(false)
+  const { user } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -93,10 +98,16 @@ export const Services = () => {
   const filtered = activeCategory === 'all' ? services : services.filter((s) => s.category === activeCategory)
 
   const handleBook = (service) => {
-    navigate('/book', { state: { serviceId: service._id } })
+    if (user) {
+      navigate('/book', { state: { serviceId: service._id } })
+    } else {
+      setGateService(service)
+      setGateOpen(true)
+    }
   }
 
   return (
+    <>
     <div className="max-w-6xl mx-auto px-6 py-12">
 
       {/* Header */}
@@ -139,5 +150,13 @@ export const Services = () => {
         </div>
       )}
     </div>
+
+    {gateOpen && (
+      <BookingGateModal
+        service={gateService}
+        onClose={() => setGateOpen(false)}
+      />
+    )}
+    </>
   )
 }
