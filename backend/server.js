@@ -4,7 +4,6 @@ import mongoose from 'mongoose'
 import morgan from 'morgan'
 import cors from 'cors'
 import helmet from 'helmet'
-import mongoSanitize from 'express-mongo-sanitize'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { existsSync } from 'fs'
@@ -33,7 +32,6 @@ const allowedOrigins = [
 app.use(helmet())
 app.use(cors({ origin: allowedOrigins, credentials: true }))
 app.use(express.json({ limit: '20kb' }))
-app.use(mongoSanitize())   // strip $ and . from req.body / req.query / req.params
 app.use(morgan('dev'))
 
 app.use('/api/auth', authRoutes)
