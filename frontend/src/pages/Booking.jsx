@@ -172,14 +172,21 @@ const StepDateTime = ({ totalDuration, primaryService, stylists, selection, onUp
     if (!selection.date || !selection.stylistId || !selectedStylist) {
       setAvailableSlots([]); setAllSlots([]); return
     }
-    const all = buildAllSlots(selectedStylist, totalDuration, selection.date)
-    setAllSlots(all)
     setLoadingSlots(true)
     api.get(`/stylists/${selection.stylistId}/availability`, {
       params: { date: format(selection.date, 'yyyy-MM-dd'), serviceId: primaryService._id },
     })
-      .then((res) => setAvailableSlots(res.data))
-      .catch(() => setAvailableSlots(all))
+      .then((res) => {
+        // API returns { all, available } — both derived from the live DB schedule
+        setAllSlots(res.data.all ?? [])
+        setAvailableSlots(res.data.available ?? [])
+      })
+      .catch(() => {
+        // Offline fallback: build from cached stylist data
+        const fallback = buildAllSlots(selectedStylist, totalDuration, selection.date)
+        setAllSlots(fallback)
+        setAvailableSlots(fallback)
+      })
       .finally(() => setLoadingSlots(false))
   }, [selection.date, selection.stylistId, primaryService._id, totalDuration, selectedStylist])
 

@@ -52,12 +52,17 @@ router.get('/:id/availability', async (req, res, next) => {
     const [yyyy, mm, dd] = date.split('-').map(Number)
     const requestedDate = new Date(yyyy, mm - 1, dd)
     const dayOfWeek = requestedDate.getDay()
-    const dayEntry = stylist.schedule.find((s) => s.day === dayOfWeek)
-    if (!dayEntry) return res.json([])
 
-    // Generate all slots
+    // Use saved schedule; fall back to Mon–Fri 9–18 for docs created before this feature
+    const effectiveSchedule = stylist.schedule?.length
+      ? stylist.schedule
+      : [1,2,3,4,5].map((d) => ({ day: d, start: '09:00', end: '18:00' }))
+    const dayEntry = effectiveSchedule.find((s) => Number(s.day) === dayOfWeek)
+    if (!dayEntry) return res.json({ all: [], available: [] })
+
+    // Generate all slots for this day
     const startBase = parse(dayEntry.start, 'HH:mm', requestedDate)
-    const endBase = parse(dayEntry.end, 'HH:mm', requestedDate)
+    const endBase   = parse(dayEntry.end,   'HH:mm', requestedDate)
     const slots = []
     let cursor = startBase
     while (isBefore(addMinutes(cursor, service.durationMinutes), endBase) ||
@@ -67,10 +72,8 @@ router.get('/:id/availability', async (req, res, next) => {
     }
 
     // Find booked slots for this day
-    const dayStart = new Date(date)
-    dayStart.setHours(0, 0, 0, 0)
-    const dayEnd = new Date(date)
-    dayEnd.setHours(23, 59, 59, 999)
+    const dayStart = new Date(yyyy, mm - 1, dd, 0, 0, 0, 0)
+    const dayEnd   = new Date(yyyy, mm - 1, dd, 23, 59, 59, 999)
 
     const bookings = await Booking.find({
       stylistId: req.params.id,
@@ -81,7 +84,7 @@ router.get('/:id/availability', async (req, res, next) => {
     const bookedStarts = new Set(bookings.map((b) => b.startTime))
     const available = slots.filter((s) => !bookedStarts.has(s))
 
-    res.json(available)
+    res.json({ all: slots, available })
   } catch (err) {
     next(err)
   }
@@ -111,13 +114,16 @@ router.patch('/:id/availability', requireAuth, async (req, res, next) => {
     }
 
     const { schedule } = req.body
-    if (schedule !== undefined) {
-      stylist.schedule = schedule
-      stylist.markModified('schedule')
-    }
-    await stylist.save()
+    if (schedule === undefined) return res.status(400).json({ message: 'schedule is required' })
 
-    res.json(stylist)
+    // Use findByIdAndUpdate/$set to reliably replace the subdocument array.
+    // Direct doc assignment + save() has known Mongoose quirks with array tracking.
+    const updated = await Stylist.findByIdAndUpdate(
+      req.params.id,
+      { $set: { schedule } },
+      { new: true, runValidators: false },
+    )
+    res.json(updated)
   } catch (err) {
     next(err)
   }
