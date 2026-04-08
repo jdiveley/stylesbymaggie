@@ -34,9 +34,10 @@ app.use(helmet({
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       'img-src': ["'self'", 'data:', 'https://images.unsplash.com'],
-      'script-src': ["'self'", 'https://www.googletagmanager.com'],
-      'script-src-elem': ["'self'", 'https://www.googletagmanager.com'],
-      'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://analytics.google.com'],
+      'script-src': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'],
+      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'],
+      'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://analytics.google.com', 'https://www.googletagmanager.com'],
+      'frame-src': ["'self'", 'https://www.googletagmanager.com'],
     },
   },
 }))
