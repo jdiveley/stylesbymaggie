@@ -29,7 +29,14 @@ const allowedOrigins = [
   process.env.CLIENT_ORIGIN,
 ].filter(Boolean)
 
-app.use(helmet())
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      'img-src': ["'self'", 'data:', 'https://images.unsplash.com'],
+    },
+  },
+}))
 app.use(cors({ origin: allowedOrigins, credentials: true }))
 app.use(express.json({ limit: '20kb' }))
 app.use(morgan('dev'))
