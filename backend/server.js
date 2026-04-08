@@ -18,6 +18,7 @@ import bookingRoutes from './routes/bookings.js'
 import userRoutes from './routes/users.js'
 import statsRoutes from './routes/stats.js'
 import contentRoutes from './routes/content.js'
+import paymentRoutes from './routes/payments.js'
 import User from './models/User.js'
 
 const app = express()
@@ -34,10 +35,10 @@ app.use(helmet({
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       'img-src': ["'self'", 'data:', 'https://images.unsplash.com'],
-      'script-src': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'],
-      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'],
-      'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://analytics.google.com', 'https://www.googletagmanager.com', 'https://www.google.com'],
-      'frame-src': ["'self'", 'https://www.googletagmanager.com'],
+      'script-src': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com', 'https://js.stripe.com'],
+      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com', 'https://js.stripe.com'],
+      'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://analytics.google.com', 'https://www.googletagmanager.com', 'https://www.google.com', 'https://api.stripe.com'],
+      'frame-src': ["'self'", 'https://www.googletagmanager.com', 'https://js.stripe.com', 'https://hooks.stripe.com'],
     },
   },
 }))
@@ -52,6 +53,7 @@ app.use('/api/bookings', bookingRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/content', contentRoutes)
+app.use('/api/payments', paymentRoutes)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { format, addDays, addMinutes, parse, isBefore } from 'date-fns'
 import toast from 'react-hot-toast'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import api from '../lib/axios'
 import { useAuth } from '../context/AuthContext'
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 const FALLBACK_SERVICES = [
   { _id: '1', name: "Women's Haircut",   priceCents: 6500,  durationMinutes: 60,  category: 'cut'       },
@@ -441,7 +445,65 @@ const StepGuestDetails = ({ guest, onUpdate, onNext, onBack }) => {
   )
 }
 
-// ── Step 4: Confirm ─────────────────────────────────────────────────────────
+// ── Step 4: Payment & Confirm ────────────────────────────────────────────────
+// Inner form — must live inside <Elements> to use Stripe hooks
+const CheckoutForm = ({ onBack, onConfirm, submitting }) => {
+  const stripe   = useStripe()
+  const elements = useElements()
+  const [payError,    setPayError]    = useState(null)
+  const [processing,  setProcessing]  = useState(false)
+
+  const handlePay = async () => {
+    if (!stripe || !elements) return
+    setPayError(null)
+    setProcessing(true)
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: 'if_required',
+    })
+    if (error) {
+      setPayError(error.message)
+      setProcessing(false)
+    } else if (paymentIntent?.status === 'succeeded') {
+      onConfirm(paymentIntent.id)
+    } else {
+      setPayError('Payment could not be completed. Please try again.')
+      setProcessing(false)
+    }
+  }
+
+  const busy = submitting || processing
+
+  return (
+    <div className="space-y-4">
+      <PaymentElement options={{ layout: 'tabs' }} />
+      {payError && (
+        <p className="text-red-400/90 text-xs rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2">
+          {payError}
+        </p>
+      )}
+      <div className="flex gap-3 pt-1">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={busy}
+          className="flex-1 py-2.5 border border-sage-600/30 text-sage-400 font-medium rounded-xl hover:border-sage-400/50 disabled:opacity-40 transition-colors text-sm"
+        >
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={handlePay}
+          disabled={busy || !stripe}
+          className="flex-1 py-2.5 bg-sage-500 hover:bg-sage-400 disabled:opacity-60 text-white font-semibold rounded-xl text-sm transition-colors"
+        >
+          {busy ? 'Processing…' : 'Pay & Book'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const StepConfirm = ({ selection, addOns, stylists, guest, isGuest, onBack, onConfirm, submitting }) => {
   const { service } = selection
   const stylist     = stylists.find((s) => s._id === selection.stylistId)
@@ -449,12 +511,31 @@ const StepConfirm = ({ selection, addOns, stylists, guest, isGuest, onBack, onCo
   const totalPrice    = service.priceCents + addOns.reduce((s, a) => s + a.priceCents, 0)
   const totalDuration = service.durationMinutes + addOns.reduce((s, a) => s + a.durationMinutes, 0)
 
+  const [clientSecret,  setClientSecret]  = useState(null)
+  const [intentLoading, setIntentLoading] = useState(true)
+  const [intentError,   setIntentError]   = useState(null)
+
+  useEffect(() => {
+    api.post('/payments/create-intent', {
+      serviceId:  service._id,
+      addOnIds:   addOns.map((a) => a._id),
+    })
+      .then((res) => setClientSecret(res.data.clientSecret))
+      .catch(() => setIntentError('Could not initialize payment. Please go back and try again.'))
+      .finally(() => setIntentLoading(false))
+  }, [service._id, addOns])
+
+  const stripeAppearance = {
+    theme: 'night',
+    variables: { colorPrimary: '#7aab7a', colorBackground: '#0d1a0f', borderRadius: '8px' },
+  }
+
   return (
     <div>
-      <h2 className="text-base font-semibold text-sage-100 mb-4">Confirm Your Booking</h2>
+      <h2 className="text-base font-semibold text-sage-100 mb-4">Review &amp; Pay</h2>
 
+      {/* Booking summary */}
       <div className="rounded-xl border border-sage-600/25 bg-[#0d1a0f]/60 p-5 mb-5 space-y-3">
-        {/* Services */}
         <div>
           <span className="text-sage-500 text-xs block mb-1.5">Services</span>
           <div className="space-y-1">
@@ -470,7 +551,6 @@ const StepConfirm = ({ selection, addOns, stylists, guest, isGuest, onBack, onCo
             ))}
           </div>
         </div>
-
         <div className="border-t border-sage-600/20 pt-3 space-y-2">
           <Row label="Duration" value={fmtDuration(totalDuration)} />
           <Row label="Stylist"  value={stylistName} />
@@ -478,8 +558,6 @@ const StepConfirm = ({ selection, addOns, stylists, guest, isGuest, onBack, onCo
           <Row label="Time"     value={selection.timeSlot} />
           {selection.notes && <Row label="Notes" value={selection.notes} />}
         </div>
-
-        {/* Guest info */}
         {isGuest && (
           <div className="border-t border-sage-600/20 pt-3 space-y-2">
             <Row label="Name"  value={guest.name} />
@@ -487,24 +565,31 @@ const StepConfirm = ({ selection, addOns, stylists, guest, isGuest, onBack, onCo
             <Row label="Phone" value={guest.phone} />
           </div>
         )}
-
         <div className="border-t border-sage-600/20 pt-3 flex justify-between">
-          <span className="text-sage-300 text-sm font-medium">Estimated Total</span>
+          <span className="text-sage-300 text-sm font-medium">Total Due</span>
           <span className="text-gold-400 font-bold text-lg">${(totalPrice / 100).toFixed(0)}</span>
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <button onClick={onBack} className="flex-1 py-2.5 border border-sage-600/30 text-sage-400 font-medium rounded-xl hover:border-sage-400/50 transition-colors text-sm">
-          Back
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={submitting}
-          className="flex-1 py-2.5 bg-sage-500 hover:bg-sage-400 disabled:opacity-60 text-white font-semibold rounded-xl text-sm transition-colors"
-        >
-          {submitting ? 'Booking…' : 'Confirm Booking'}
-        </button>
+      {/* Payment form */}
+      <div className="rounded-xl border border-sage-600/25 bg-[#0d1a0f]/60 p-5">
+        <p className="text-xs font-medium text-sage-400 mb-4">Payment Details</p>
+        {intentLoading && (
+          <div className="space-y-3">
+            <div className="h-10 bg-sage-600/20 rounded-lg animate-pulse" />
+            <div className="h-10 bg-sage-600/20 rounded-lg animate-pulse" />
+            <div className="h-10 bg-sage-600/20 rounded-lg animate-pulse w-1/2" />
+          </div>
+        )}
+        {intentError && (
+          <p className="text-red-400/90 text-sm">{intentError}</p>
+        )}
+        {clientSecret && (
+          <Elements stripe={stripePromise} options={{ clientSecret, appearance: stripeAppearance }}>
+            <CheckoutForm onBack={onBack} onConfirm={onConfirm} submitting={submitting} />
+          </Elements>
+        )}
+        {!intentLoading && !clientSecret && !intentError && null}
       </div>
     </div>
   )
@@ -580,7 +665,7 @@ export const Booking = () => {
   const STEP_GUEST     = isGuest ? 2 : -1
   const STEP_CONFIRM   = isGuest ? 3 : 2
 
-  const handleConfirm = async () => {
+  const handleConfirm = async (paymentIntentId) => {
     setSubmitting(true)
     try {
       const addOnNote = selection.addOns.length
@@ -589,11 +674,12 @@ export const Booking = () => {
       const notes = [addOnNote, selection.notes].filter(Boolean).join(' ')
 
       const body = {
-        serviceId: selection.service._id,
-        stylistId: selection.stylistId,
-        date:      format(selection.date, 'yyyy-MM-dd'),
-        startTime: selection.timeSlot,
+        serviceId:       selection.service._id,
+        stylistId:       selection.stylistId,
+        date:            format(selection.date, 'yyyy-MM-dd'),
+        startTime:       selection.timeSlot,
         notes,
+        paymentIntentId: paymentIntentId ?? null,
       }
 
       if (isGuest) {

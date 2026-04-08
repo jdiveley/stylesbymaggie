@@ -1,16 +1,19 @@
 import { Router } from 'express'
 import { addMinutes, format, parse } from 'date-fns'
+import Stripe from 'stripe'
 import Booking from '../models/Booking.js'
 import Service from '../models/Service.js'
 import { requireAuth, optionalAuth, requireRole } from '../middleware/auth.js'
 import { isValidId, isValidTime, isValidDate, isValidEmail, isValidPhone, sanitizeStr } from '../middleware/validate.js'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 const router = Router()
 
 // POST /api/bookings — authenticated or guest
 router.post('/', optionalAuth, async (req, res, next) => {
   try {
-    const { stylistId, serviceId, date, startTime } = req.body
+    const { stylistId, serviceId, date, startTime, paymentIntentId } = req.body
     const notes      = sanitizeStr(req.body.notes, 1000)
     const guestName  = sanitizeStr(req.body.guestName, 100)
     const guestEmail = sanitizeStr(req.body.guestEmail, 200)
@@ -38,6 +41,25 @@ router.post('/', optionalAuth, async (req, res, next) => {
       if (!isValidPhone(guestPhone)) return res.status(400).json({ message: 'Invalid guestPhone — enter a valid phone number' })
     }
 
+    // Verify payment when a paymentIntentId is supplied (required for public bookings)
+    let amountPaidCents = null
+    if (paymentIntentId) {
+      if (typeof paymentIntentId !== 'string' || !/^pi_[A-Za-z0-9_]+$/.test(paymentIntentId)) {
+        return res.status(400).json({ message: 'Invalid paymentIntentId' })
+      }
+      const intent = await stripe.paymentIntents.retrieve(paymentIntentId)
+      if (intent.status !== 'succeeded') {
+        return res.status(402).json({ message: 'Payment has not been completed' })
+      }
+      if (intent.metadata?.serviceId !== serviceId) {
+        return res.status(400).json({ message: 'Payment does not match this booking' })
+      }
+      // Prevent reuse of the same PaymentIntent for a second booking
+      const duplicate = await Booking.findOne({ paymentIntentId })
+      if (duplicate) return res.status(409).json({ message: 'This payment has already been used' })
+      amountPaidCents = intent.amount
+    }
+
     const service = await Service.findById(serviceId)
     if (!service) return res.status(404).json({ message: 'Service not found' })
 
@@ -62,6 +84,8 @@ router.post('/', optionalAuth, async (req, res, next) => {
       startTime,
       endTime,
       notes,
+      paymentIntentId: paymentIntentId ?? null,
+      amountPaidCents,
     }
 
     if (req.user) {

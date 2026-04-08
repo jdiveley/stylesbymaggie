@@ -19,6 +19,8 @@ const bookingSchema = new mongoose.Schema({
     default: 'pending',
   },
   notes: { type: String, default: '' },
+  paymentIntentId: { type: String, default: null },
+  amountPaidCents: { type: Number, default: null },
 }, { timestamps: true })
 
 bookingSchema.index({ stylistId: 1, date: 1 })
