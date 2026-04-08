@@ -213,7 +213,10 @@ const AvailabilityPanel = ({ user }) => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  const applySchedule = (data) => setSchedule((data.schedule ?? DEFAULT_SCHEDULE).slice().sort((a, b) => a.day - b.day))
+  const applySchedule = (data) => {
+    const raw = data.schedule?.length ? data.schedule : DEFAULT_SCHEDULE
+    setSchedule(raw.map(({ day, start, end }) => ({ day, start, end })).sort((a, b) => a.day - b.day))
+  }
 
   useEffect(() => {
     if (isPrivileged) {

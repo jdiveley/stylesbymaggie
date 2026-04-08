@@ -48,7 +48,9 @@ router.get('/:id/availability', async (req, res, next) => {
     ])
     if (!stylist || !service) return res.status(404).json({ message: 'Stylist or service not found' })
 
-    const requestedDate = new Date(date)
+    // Parse date string as local date to avoid UTC-midnight day-of-week shift
+    const [yyyy, mm, dd] = date.split('-').map(Number)
+    const requestedDate = new Date(yyyy, mm - 1, dd)
     const dayOfWeek = requestedDate.getDay()
     const dayEntry = stylist.schedule.find((s) => s.day === dayOfWeek)
     if (!dayEntry) return res.json([])
@@ -109,7 +111,10 @@ router.patch('/:id/availability', requireAuth, async (req, res, next) => {
     }
 
     const { schedule } = req.body
-    if (schedule !== undefined) stylist.schedule = schedule
+    if (schedule !== undefined) {
+      stylist.schedule = schedule
+      stylist.markModified('schedule')
+    }
     await stylist.save()
 
     res.json(stylist)
