@@ -81,7 +81,7 @@ export const Login = () => {
                   value={form.name}
                   onChange={handleChange}
                   placeholder="Your name"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm text-gray-900 bg-white placeholder-gray-400"
                 />
               </div>
               <div>
@@ -93,7 +93,7 @@ export const Login = () => {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm text-gray-900 bg-white placeholder-gray-400"
                 />
               </div>
             </>
@@ -107,7 +107,7 @@ export const Login = () => {
                 value={form.identifier}
                 onChange={handleChange}
                 placeholder="username or you@example.com"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm text-gray-900 bg-white placeholder-gray-400"
               />
             </div>
           )}
@@ -122,7 +122,7 @@ export const Login = () => {
               value={form.password}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm text-gray-900 bg-white placeholder-gray-400"
             />
           </div>
 
