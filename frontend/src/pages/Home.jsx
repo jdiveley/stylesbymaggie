@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../lib/axios'
 import { useAuth } from '../context/AuthContext'
+import { useContent } from '../context/ContentContext'
 import { BookingGateModal } from '../components/BookingGateModal'
 
 // Curated Unsplash hairstyle photos per service name (lowercase) and category
@@ -66,12 +67,28 @@ const ServiceCard = ({ service, onBook }) => (
   </div>
 )
 
+// Parse "value · label" stat format
+const parseStat = (raw, fallbackVal, fallbackLbl) => {
+  const [v, ...rest] = (raw || '').split('·')
+  return { value: v?.trim() || fallbackVal, label: rest.join('·').trim() || fallbackLbl }
+}
+
 export const Home = () => {
   const [services, setServices] = useState(FALLBACK_SERVICES)
   const [gateService, setGateService] = useState(null) // null = modal closed
   const [gateOpen, setGateOpen] = useState(false)
   const { user } = useAuth()
   const navigate = useNavigate()
+
+  const tagline       = useContent('home_tagline',        'A boutique salon experience where every cut, color, and treatment is crafted with intention — and a little magic.')
+  const hours         = useContent('home_hours',          'Mon – Sat  ·  9am – 7pm')
+  const hoursNote     = useContent('home_hours_note',     'By Appointment · Walk-ins Welcome')
+  const aboutHeading  = useContent('home_about_heading',  'Beautiful hair starts with listening.')
+  const aboutBody     = useContent('home_about_body',     'Maggie built this salon on a simple belief: that great hair comes from understanding each client\'s life, style, and vision — not just their hair type. Every appointment is a collaboration.')
+  const stat1         = parseStat(useContent('home_stat_1', '10+ · Years of experience'), '10+', 'Years of experience')
+  const stat2         = parseStat(useContent('home_stat_2', '500+ · Happy clients'), '500+', 'Happy clients')
+  const stat3         = parseStat(useContent('home_stat_3', '8 · Signature services'), '8', 'Signature services')
+  const stat4         = parseStat(useContent('home_stat_4', '★★★★★ · Client rated'), '★★★★★', 'Client rated')
 
   useEffect(() => {
     api.get('/services')
@@ -151,8 +168,7 @@ export const Home = () => {
 
           {/* Tagline */}
           <p className="text-sage-200/70 text-lg font-light leading-relaxed mt-6 mb-10 max-w-md">
-            A boutique salon experience where every cut, color, and treatment
-            is crafted with intention — and a little magic.
+            {tagline}
           </p>
 
           {/* CTAs */}
@@ -173,11 +189,9 @@ export const Home = () => {
 
           {/* Quick info */}
           <div className="flex flex-wrap gap-6 mt-12 text-sage-400/70 text-xs tracking-wide">
-            <span>Mon – Sat  ·  9am – 7pm</span>
+            <span>{hours}</span>
             <span className="text-sage-600">|</span>
-            <span>By Appointment</span>
-            <span className="text-sage-600">|</span>
-            <span>Walk-ins Welcome</span>
+            <span>{hoursNote}</span>
           </div>
         </div>
       </section>
@@ -218,13 +232,10 @@ export const Home = () => {
               <span className="text-gold-400/70 text-xs tracking-[0.25em] uppercase">Our Philosophy</span>
             </div>
             <h2 className="text-3xl font-light text-sage-50 leading-snug mb-5">
-              Beautiful hair starts with
-              <span className="text-gold-400 italic"> listening.</span>
+              {aboutHeading}
             </h2>
             <p className="text-sage-300/60 leading-relaxed text-sm mb-6">
-              Maggie built this salon on a simple belief: that great hair comes from understanding
-              each client's life, style, and vision — not just their hair type.
-              Every appointment is a collaboration.
+              {aboutBody}
             </p>
             <Link
               to="/about"
@@ -237,12 +248,7 @@ export const Home = () => {
 
           {/* Decorative stat cards */}
           <div className="grid grid-cols-2 gap-4">
-            {[
-              { value: '10+', label: 'Years of experience' },
-              { value: '500+', label: 'Happy clients' },
-              { value: '8',    label: 'Signature services' },
-              { value: '★★★★★', label: 'Client rated' },
-            ].map(({ value, label }) => (
+            {[stat1, stat2, stat3, stat4].map(({ value, label }) => (
               <div
                 key={label}
                 className="rounded-xl border border-sage-600/20 bg-[#111f13]/50 p-5 text-center"

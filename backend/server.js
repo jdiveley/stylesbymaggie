@@ -12,6 +12,7 @@ import stylistRoutes from './routes/stylists.js'
 import bookingRoutes from './routes/bookings.js'
 import userRoutes from './routes/users.js'
 import statsRoutes from './routes/stats.js'
+import contentRoutes from './routes/content.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -34,6 +35,7 @@ app.use('/api/stylists', stylistRoutes)
 app.use('/api/bookings', bookingRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api/content', contentRoutes)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

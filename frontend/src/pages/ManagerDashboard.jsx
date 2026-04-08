@@ -3,6 +3,7 @@ import { format, isToday, parseISO } from 'date-fns'
 import toast from 'react-hot-toast'
 import api from '../lib/axios'
 import { useAuth } from '../context/AuthContext'
+import { useContentContext } from '../context/ContentContext'
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -603,12 +604,138 @@ const ServicesPanel = () => {
   )
 }
 
+// ── Content Editor (owner / admin) ──────────────────────────────────
+const SECTION_ORDER = ['Home', 'About', 'Contact', 'Feedback']
+
+const ContentPanel = () => {
+  const { refresh } = useContentContext()
+  const [schema, setSchema]   = useState([])   // full docs with label/type/section
+  const [drafts, setDrafts]   = useState({})   // { key: editedValue }
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving]   = useState(false)
+  const [activeSection, setActiveSection] = useState('Home')
+
+  useEffect(() => {
+    api.get('/content/schema')
+      .then((res) => {
+        setSchema(res.data)
+        const initial = {}
+        res.data.forEach((d) => { initial[d.key] = d.value })
+        setDrafts(initial)
+      })
+      .catch(() => toast.error('Failed to load content'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const sections = SECTION_ORDER.filter((s) => schema.some((d) => d.section === s))
+  const visible  = schema.filter((d) => d.section === activeSection).sort((a, b) => a.order - b.order)
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      // Only send keys that changed
+      const changed = {}
+      schema.forEach(({ key, value }) => {
+        if (drafts[key] !== value) changed[key] = drafts[key]
+      })
+      if (Object.keys(changed).length === 0) {
+        toast('No changes to save', { icon: 'ℹ️' })
+        setSaving(false)
+        return
+      }
+      await api.put('/content', changed)
+      // Update schema to reflect saved values
+      setSchema((prev) => prev.map((d) => key in changed ? { ...d, value: changed[d.key] ?? d.value } : d))
+      await refresh()   // re-fetch into ContentContext so pages update live
+      toast.success('Content saved')
+    } catch {
+      toast.error('Failed to save content')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <p className="text-gray-400 text-sm">Loading…</p>
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <div>
+          <p className="text-sm font-medium text-gray-700">Site Copy Editor</p>
+          <p className="text-xs text-gray-400 mt-0.5">Changes go live instantly after saving.</p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-5 py-2 bg-sage-400 hover:bg-sage-500 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors"
+        >
+          {saving ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
+
+      {/* Section tabs */}
+      <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
+        {sections.map((s) => (
+          <button
+            key={s}
+            onClick={() => setActiveSection(s)}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap -mb-px ${
+              activeSection === s ? 'bg-gold-400/20 text-amber-700 border-b-2 border-gold-400' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {/* Fields */}
+      <div className="space-y-5 max-w-2xl">
+        {visible.map(({ key, label, type }) => (
+          <div key={key}>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+              {label}
+            </label>
+            {type === 'textarea' ? (
+              <textarea
+                rows={4}
+                value={drafts[key] ?? ''}
+                onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sage-400 resize-y"
+              />
+            ) : (
+              <input
+                type="text"
+                value={drafts[key] ?? ''}
+                onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sage-400"
+              />
+            )}
+            {key.includes('stat_') && (
+              <p className="text-xs text-gray-400 mt-1">Format: <code>value · label</code> e.g. <code>10+ · Years of experience</code></p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 pt-4 border-t border-gray-100">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-2.5 bg-sage-400 hover:bg-sage-500 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors"
+        >
+          {saving ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Manager Dashboard ────────────────────────────────────────────────
 export const ManagerDashboard = () => {
   const { user } = useAuth()
   const isPrivileged = user?.role === 'admin' || user?.role === 'owner'
 
-  const tabs = ['Today', 'All Bookings', 'Stylists', 'Availability', ...(isPrivileged ? ['Services'] : [])]
+  const tabs = ['Today', 'All Bookings', 'Stylists', 'Availability', ...(isPrivileged ? ['Services', 'Content'] : [])]
 
   const [tab, setTab] = useState('Today')
   const [bookings, setBookings] = useState([])
@@ -662,6 +789,7 @@ export const ManagerDashboard = () => {
             {tab === 'Stylists' && <StylistRoster />}
             {tab === 'Availability' && user && <AvailabilityPanel user={user} />}
             {tab === 'Services' && isPrivileged && <ServicesPanel />}
+            {tab === 'Content' && isPrivileged && <ContentPanel />}
           </>
         )}
       </div>
