@@ -2,16 +2,39 @@ import { Router } from 'express'
 import { addMinutes, format, parse } from 'date-fns'
 import Booking from '../models/Booking.js'
 import Service from '../models/Service.js'
-import { requireAuth, requireRole } from '../middleware/auth.js'
+import { requireAuth, optionalAuth, requireRole } from '../middleware/auth.js'
+import { isValidId, isValidTime, isValidDate, isValidEmail, sanitizeStr } from '../middleware/validate.js'
 
 const router = Router()
 
-// POST /api/bookings — authenticated customers
-router.post('/', requireAuth, async (req, res, next) => {
+// POST /api/bookings — authenticated or guest
+router.post('/', optionalAuth, async (req, res, next) => {
   try {
-    const { stylistId, serviceId, date, startTime, notes } = req.body
+    const { stylistId, serviceId, date, startTime } = req.body
+    const notes      = sanitizeStr(req.body.notes, 1000)
+    const guestName  = sanitizeStr(req.body.guestName, 100)
+    const guestEmail = sanitizeStr(req.body.guestEmail, 200)
+    const guestPhone = sanitizeStr(req.body.guestPhone, 30)
+
+    // Required fields
     if (!stylistId || !serviceId || !date || !startTime) {
       return res.status(400).json({ message: 'stylistId, serviceId, date, and startTime are required' })
+    }
+
+    // ID format validation
+    if (!isValidId(stylistId)) return res.status(400).json({ message: 'Invalid stylistId' })
+    if (!isValidId(serviceId)) return res.status(400).json({ message: 'Invalid serviceId' })
+
+    // Date / time validation
+    if (!isValidDate(date)) return res.status(400).json({ message: 'Invalid date' })
+    if (!isValidTime(startTime)) return res.status(400).json({ message: 'startTime must be HH:mm' })
+
+    // Auth: either logged-in user or valid guest info
+    if (!req.user) {
+      if (!guestName) return res.status(400).json({ message: 'guestName is required for guest bookings' })
+      if (!guestEmail) return res.status(400).json({ message: 'guestEmail is required for guest bookings' })
+      if (!isValidEmail(guestEmail)) return res.status(400).json({ message: 'Invalid guestEmail' })
+      if (guestPhone && guestPhone.length > 30) return res.status(400).json({ message: 'Phone number too long' })
     }
 
     const service = await Service.findById(serviceId)
@@ -20,9 +43,9 @@ router.post('/', requireAuth, async (req, res, next) => {
     const startParsed = parse(startTime, 'HH:mm', new Date(date))
     const endTime = format(addMinutes(startParsed, service.durationMinutes), 'HH:mm')
 
-    // Check for conflicts
+    // Conflict check
     const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0)
-    const dayEnd = new Date(date); dayEnd.setHours(23, 59, 59, 999)
+    const dayEnd   = new Date(date); dayEnd.setHours(23, 59, 59, 999)
     const conflict = await Booking.findOne({
       stylistId,
       date: { $gte: dayStart, $lte: dayEnd },
@@ -31,16 +54,24 @@ router.post('/', requireAuth, async (req, res, next) => {
     })
     if (conflict) return res.status(409).json({ message: 'This time slot is no longer available' })
 
-    const booking = await Booking.create({
-      customerId: req.user.userId,
+    const bookingData = {
       stylistId,
       serviceId,
       date: new Date(date),
       startTime,
       endTime,
       notes,
-    })
+    }
 
+    if (req.user) {
+      bookingData.customerId = req.user.userId
+    } else {
+      bookingData.guestName  = guestName
+      bookingData.guestEmail = guestEmail
+      bookingData.guestPhone = guestPhone || null
+    }
+
+    const booking = await Booking.create(bookingData)
     const populated = await booking.populate([
       { path: 'serviceId', select: 'name priceCents durationMinutes' },
       { path: 'stylistId', populate: { path: 'userId', select: 'name' } },
@@ -65,20 +96,33 @@ router.get('/my', requireAuth, async (req, res, next) => {
   }
 })
 
-// GET /api/bookings — admin: all bookings with optional filters
+// GET /api/bookings — admin/owner/stylist: all bookings with optional filters
 router.get('/', requireAuth, requireRole('admin', 'owner', 'stylist'), async (req, res, next) => {
   try {
     const filter = {}
-    if (req.query.status) filter.status = req.query.status
-    if (req.query.stylistId) filter.stylistId = req.query.stylistId
+
+    // Whitelist status values to prevent injection
+    const ALLOWED_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled', 'no-show']
+    if (req.query.status) {
+      if (!ALLOWED_STATUSES.includes(req.query.status)) {
+        return res.status(400).json({ message: 'Invalid status filter' })
+      }
+      filter.status = req.query.status
+    }
+
+    if (req.query.stylistId) {
+      if (!isValidId(req.query.stylistId)) return res.status(400).json({ message: 'Invalid stylistId' })
+      filter.stylistId = req.query.stylistId
+    }
+
     if (req.query.date) {
+      if (!isValidDate(req.query.date)) return res.status(400).json({ message: 'Invalid date' })
       const d = new Date(req.query.date)
       const dayStart = new Date(d); dayStart.setHours(0, 0, 0, 0)
-      const dayEnd = new Date(d); dayEnd.setHours(23, 59, 59, 999)
+      const dayEnd   = new Date(d); dayEnd.setHours(23, 59, 59, 999)
       filter.date = { $gte: dayStart, $lte: dayEnd }
     }
 
-    // Stylists can only see their own bookings
     if (req.user.role === 'stylist') filter.stylistId = req.user.stylistId
 
     const bookings = await Booking.find(filter)
@@ -95,9 +139,11 @@ router.get('/', requireAuth, requireRole('admin', 'owner', 'stylist'), async (re
 // PATCH /api/bookings/:id/status — stylist or admin
 router.patch('/:id/status', requireAuth, requireRole('admin', 'owner', 'stylist'), async (req, res, next) => {
   try {
+    if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid booking id' })
+
+    const ALLOWED = ['pending', 'confirmed', 'completed', 'cancelled', 'no-show']
     const { status } = req.body
-    const allowed = ['pending', 'confirmed', 'completed', 'cancelled', 'no-show']
-    if (!allowed.includes(status)) return res.status(400).json({ message: 'Invalid status' })
+    if (!ALLOWED.includes(status)) return res.status(400).json({ message: 'Invalid status' })
 
     const booking = await Booking.findByIdAndUpdate(
       req.params.id,
@@ -114,6 +160,7 @@ router.patch('/:id/status', requireAuth, requireRole('admin', 'owner', 'stylist'
 // DELETE /api/bookings/:id — admin only
 router.delete('/:id', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
+    if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid booking id' })
     await Booking.findByIdAndDelete(req.params.id)
     res.json({ message: 'Booking deleted' })
   } catch (err) {

@@ -3,6 +3,8 @@ import express from 'express'
 import mongoose from 'mongoose'
 import morgan from 'morgan'
 import cors from 'cors'
+import helmet from 'helmet'
+import mongoSanitize from 'express-mongo-sanitize'
 
 import authRoutes from './routes/auth.js'
 import serviceRoutes from './routes/services.js'
@@ -20,8 +22,10 @@ const allowedOrigins = [
   process.env.CLIENT_ORIGIN,
 ].filter(Boolean)
 
+app.use(helmet())
 app.use(cors({ origin: allowedOrigins, credentials: true }))
-app.use(express.json())
+app.use(express.json({ limit: '20kb' }))
+app.use(mongoSanitize())   // strip $ and . from req.body / req.query / req.params
 app.use(morgan('dev'))
 
 app.use('/api/auth', authRoutes)

@@ -5,6 +5,7 @@ import Service from '../models/Service.js'
 import Booking from '../models/Booking.js'
 import User from '../models/User.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
+import { isValidId, isValidDate } from '../middleware/validate.js'
 
 const router = Router()
 
@@ -37,6 +38,9 @@ router.get('/:id/availability', async (req, res, next) => {
     if (!date || !serviceId) {
       return res.status(400).json({ message: 'date and serviceId are required' })
     }
+    if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid stylist id' })
+    if (!isValidId(serviceId))     return res.status(400).json({ message: 'Invalid serviceId' })
+    if (!isValidDate(date))        return res.status(400).json({ message: 'Invalid date' })
 
     const [stylist, service] = await Promise.all([
       Stylist.findById(req.params.id),

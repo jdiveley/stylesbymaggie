@@ -1,7 +1,13 @@
 import mongoose from 'mongoose'
 
 const bookingSchema = new mongoose.Schema({
-  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  // Authenticated customer (null for guest bookings)
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  // Guest info (populated when customerId is null)
+  guestName:  { type: String, default: null },
+  guestEmail: { type: String, default: null },
+  guestPhone: { type: String, default: null },
+
   stylistId: { type: mongoose.Schema.Types.ObjectId, ref: 'Stylist', required: true },
   serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: true },
   date: { type: Date, required: true },

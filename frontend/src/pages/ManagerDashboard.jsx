@@ -38,7 +38,13 @@ const TodaySchedule = ({ bookings }) => {
             <div className="text-xs text-gray-400">{b.endTime}</div>
           </div>
           <div className="flex-1">
-            <div className="font-semibold text-gray-800">{b.customerId?.name ?? 'Customer'}</div>
+            <div className="font-semibold text-gray-800 flex items-center gap-1.5">
+              {b.guestName ?? b.customerId?.name ?? 'Customer'}
+              {!b.customerId && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 font-medium">Guest</span>}
+            </div>
+            {(b.guestEmail ?? b.customerId?.email) && (
+              <div className="text-xs text-gray-400">{b.guestEmail ?? b.customerId?.email}</div>
+            )}
             <div className="text-sm text-gray-500">{b.serviceId?.name ?? 'Service'}</div>
             {b.notes && <div className="text-xs text-gray-400 mt-1 italic">"{b.notes}"</div>}
           </div>
@@ -74,7 +80,15 @@ const BookingsManagement = ({ bookings, onStatusChange }) => {
           <tbody className="divide-y divide-gray-100">
             {bookings.map((b) => (
               <tr key={b._id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-800">{b.customerId?.name ?? '—'}</td>
+                <td className="px-4 py-3">
+                    <div className="font-medium text-gray-800 flex items-center gap-1.5">
+                      {b.guestName ?? b.customerId?.name ?? '—'}
+                      {!b.customerId && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 font-medium">Guest</span>}
+                    </div>
+                    {(b.guestEmail ?? b.customerId?.email) && (
+                      <div className="text-xs text-gray-400">{b.guestEmail ?? b.customerId?.email}</div>
+                    )}
+                  </td>
                 <td className="px-4 py-3 text-gray-600">{b.serviceId?.name ?? '—'}</td>
                 <td className="px-4 py-3 text-gray-500">
                   {format(new Date(b.date), 'MMM d, yyyy')}

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import Service from '../models/Service.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
+import { isValidId, sanitizeStr } from '../middleware/validate.js'
 
 const router = Router()
 
@@ -35,7 +36,8 @@ router.post('/', requireAuth, requireRole('admin', 'owner'), async (req, res, ne
 // PUT /api/services/:id — admin only
 router.put('/:id', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
-    const service = await Service.findByIdAndUpdate(req.params.id, req.body, { new: true })
+    if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid service id' })
+    const service = await Service.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
     if (!service) return res.status(404).json({ message: 'Service not found' })
     res.json(service)
   } catch (err) {
@@ -46,6 +48,7 @@ router.put('/:id', requireAuth, requireRole('admin', 'owner'), async (req, res, 
 // DELETE /api/services/:id — admin only (soft delete)
 router.delete('/:id', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
+    if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid service id' })
     const service = await Service.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true })
     if (!service) return res.status(404).json({ message: 'Service not found' })
     res.json({ message: 'Service deactivated' })

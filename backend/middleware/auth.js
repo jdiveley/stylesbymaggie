@@ -13,6 +13,15 @@ export const requireAuth = (req, res, next) => {
   }
 }
 
+// Attaches req.user if a valid token is present, but never rejects
+export const optionalAuth = (req, _res, next) => {
+  const header = req.headers.authorization
+  if (header?.startsWith('Bearer ')) {
+    try { req.user = jwt.verify(header.slice(7), process.env.JWT_SECRET) } catch { /* ignore */ }
+  }
+  next()
+}
+
 export const requireRole = (...roles) => (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Not authenticated' })
   if (!roles.includes(req.user.role)) {

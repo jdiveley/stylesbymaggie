@@ -25,14 +25,7 @@ export const App = () => {
           <Route path="/services" element={<Services />} />
           <Route path="/login" element={<Login />} />
           <Route path="/feedback" element={<Feedback />} />
-          <Route
-            path="/book"
-            element={
-              <ProtectedRoute>
-                <Booking />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/book" element={<Booking />} />
           <Route
             path="/account/password"
             element={
