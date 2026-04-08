@@ -20,9 +20,11 @@ const fmtDuration = (min) =>
   min >= 60 ? `${Math.floor(min / 60)}h${min % 60 ? ` ${min % 60}m` : ''}` : `${min}m`
 
 const buildAllSlots = (stylist, durationMinutes, date) => {
-  const base  = new Date(date)
-  const start = parse(stylist.workingHours.start, 'HH:mm', base)
-  const end   = parse(stylist.workingHours.end,   'HH:mm', base)
+  const base     = new Date(date)
+  const dayEntry = (stylist.schedule ?? []).find((e) => e.day === base.getDay())
+  if (!dayEntry) return []
+  const start = parse(dayEntry.start, 'HH:mm', base)
+  const end   = parse(dayEntry.end,   'HH:mm', base)
   const slots = []
   let cursor = start
   while (
@@ -163,7 +165,7 @@ const StepDateTime = ({ totalDuration, primaryService, stylists, selection, onUp
 
   const isWorkingDay = (d) => {
     if (!selectedStylist) return true
-    return selectedStylist.workingDays.includes(d.getDay())
+    return (selectedStylist.schedule ?? []).some((e) => e.day === d.getDay())
   }
 
   useEffect(() => {
@@ -217,7 +219,7 @@ const StepDateTime = ({ totalDuration, primaryService, stylists, selection, onUp
         {selectedStylist && (
           <p className="text-xs text-sage-500/70 mb-2">
             Works: {['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-              .filter((_, i) => selectedStylist.workingDays.includes(i)).join(', ')}
+              .filter((_, i) => (selectedStylist.schedule ?? []).some((e) => e.day === i)).join(', ')}
           </p>
         )}
         <div className="flex gap-2 overflow-x-auto pb-1">

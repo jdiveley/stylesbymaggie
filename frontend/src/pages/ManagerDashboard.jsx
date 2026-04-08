@@ -194,7 +194,7 @@ const StylistRoster = () => {
             </div>
           )}
           <div className="text-xs text-gray-400">
-            Works: {s.workingDays.map((d) => DAY_NAMES[d]).join(', ')} &middot; {s.workingHours.start}–{s.workingHours.end}
+            Works: {(s.schedule ?? []).sort((a, b) => a.day - b.day).map((e) => `${DAY_NAMES[e.day]} ${e.start}–${e.end}`).join(', ')}
           </div>
         </div>
       ))}
@@ -202,14 +202,18 @@ const StylistRoster = () => {
   )
 }
 
+const DEFAULT_SCHEDULE = [1, 2, 3, 4, 5].map((day) => ({ day, start: '09:00', end: '18:00' }))
+
 // ── Availability Panel ───────────────────────────────────────────────
 const AvailabilityPanel = ({ user }) => {
   const isPrivileged = user.role === 'admin' || user.role === 'owner'
   const [stylists, setStylists] = useState([])
   const [selectedId, setSelectedId] = useState(null)
-  const [form, setForm] = useState({ workingDays: [1, 2, 3, 4, 5], workingHours: { start: '09:00', end: '18:00' } })
+  const [schedule, setSchedule] = useState(DEFAULT_SCHEDULE)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  const applySchedule = (data) => setSchedule((data.schedule ?? DEFAULT_SCHEDULE).slice().sort((a, b) => a.day - b.day))
 
   useEffect(() => {
     if (isPrivileged) {
@@ -218,7 +222,7 @@ const AvailabilityPanel = ({ user }) => {
           setStylists(res.data)
           if (res.data.length > 0) {
             setSelectedId(res.data[0]._id)
-            setForm({ workingDays: res.data[0].workingDays, workingHours: { ...res.data[0].workingHours } })
+            applySchedule(res.data[0])
           }
         })
         .catch(() => toast.error('Failed to load stylists'))
@@ -227,7 +231,7 @@ const AvailabilityPanel = ({ user }) => {
       api.get('/stylists/me')
         .then((res) => {
           setSelectedId(res.data._id)
-          setForm({ workingDays: res.data.workingDays, workingHours: { ...res.data.workingHours } })
+          applySchedule(res.data)
         })
         .catch(() => toast.error('Could not load your stylist profile'))
         .finally(() => setLoading(false))
@@ -237,26 +241,32 @@ const AvailabilityPanel = ({ user }) => {
   const handleStylistChange = (id) => {
     const s = stylists.find((s) => s._id === id)
     setSelectedId(id)
-    setForm({ workingDays: s.workingDays, workingHours: { ...s.workingHours } })
+    applySchedule(s)
   }
 
+  const isActive = (day) => schedule.some((e) => e.day === day)
+
   const toggleDay = (day) => {
-    setForm((f) => ({
-      ...f,
-      workingDays: f.workingDays.includes(day)
-        ? f.workingDays.filter((d) => d !== day)
-        : [...f.workingDays, day].sort((a, b) => a - b),
-    }))
+    setSchedule((prev) => {
+      if (prev.some((e) => e.day === day)) {
+        return prev.filter((e) => e.day !== day)
+      }
+      return [...prev, { day, start: '09:00', end: '18:00' }].sort((a, b) => a.day - b.day)
+    })
+  }
+
+  const updateTime = (day, field, value) => {
+    setSchedule((prev) => prev.map((e) => e.day === day ? { ...e, [field]: value } : e))
   }
 
   const handleSave = async () => {
-    if (form.workingDays.length === 0) {
+    if (schedule.length === 0) {
       toast.error('Select at least one working day')
       return
     }
     setSaving(true)
     try {
-      const res = await api.patch(`/stylists/${selectedId}/availability`, form)
+      const res = await api.patch(`/stylists/${selectedId}/availability`, { schedule })
       if (isPrivileged) {
         setStylists((prev) => prev.map((s) => s._id === selectedId ? { ...s, ...res.data } : s))
       }
@@ -296,49 +306,52 @@ const AvailabilityPanel = ({ user }) => {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Working Days</label>
-        <div className="flex gap-2 flex-wrap">
-          {DAY_NAMES.map((name, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => toggleDay(idx)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                form.workingDays.includes(idx)
-                  ? 'bg-sage-400 text-white border-sage-400'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-sage-400'
-              }`}
-            >
-              {name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-          <input
-            type="time"
-            value={form.workingHours.start}
-            onChange={(e) => setForm((f) => ({ ...f, workingHours: { ...f.workingHours, start: e.target.value } }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-          <input
-            type="time"
-            value={form.workingHours.end}
-            onChange={(e) => setForm((f) => ({ ...f, workingHours: { ...f.workingHours, end: e.target.value } }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
-          />
+        <label className="block text-sm font-medium text-gray-700 mb-3">Weekly Schedule</label>
+        <div className="space-y-2">
+          {DAY_NAMES.map((name, idx) => {
+            const active = isActive(idx)
+            const entry = schedule.find((e) => e.day === idx)
+            return (
+              <div key={idx} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${active ? 'border-sage-300 bg-sage-50' : 'border-gray-200 bg-gray-50'}`}>
+                <button
+                  type="button"
+                  onClick={() => toggleDay(idx)}
+                  className={`w-16 flex-shrink-0 px-2 py-1 rounded-md text-xs font-semibold border transition-colors ${
+                    active
+                      ? 'bg-sage-400 text-white border-sage-400'
+                      : 'bg-white text-gray-500 border-gray-300 hover:border-sage-400'
+                  }`}
+                >
+                  {name}
+                </button>
+                {active ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="time"
+                      value={entry.start}
+                      onChange={(e) => updateTime(idx, 'start', e.target.value)}
+                      className="flex-1 min-w-0 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
+                    />
+                    <span className="text-gray-400 text-xs flex-shrink-0">to</span>
+                    <input
+                      type="time"
+                      value={entry.end}
+                      onChange={(e) => updateTime(idx, 'end', e.target.value)}
+                      className="flex-1 min-w-0 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
+                    />
+                  </div>
+                ) : (
+                  <span className="text-xs text-gray-400 italic">Day off</span>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 
       <div className="pt-1">
         <p className="text-xs text-gray-400 mb-3">
-          Booking slots are generated automatically from these hours. Booked slots are removed from the calendar in real time.
+          Booking slots are generated automatically from each day's hours. Booked slots are removed from the calendar in real time.
         </p>
         <button
           onClick={handleSave}

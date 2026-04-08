@@ -50,11 +50,12 @@ router.get('/:id/availability', async (req, res, next) => {
 
     const requestedDate = new Date(date)
     const dayOfWeek = requestedDate.getDay()
-    if (!stylist.workingDays.includes(dayOfWeek)) return res.json([])
+    const dayEntry = stylist.schedule.find((s) => s.day === dayOfWeek)
+    if (!dayEntry) return res.json([])
 
     // Generate all slots
-    const startBase = parse(stylist.workingHours.start, 'HH:mm', requestedDate)
-    const endBase = parse(stylist.workingHours.end, 'HH:mm', requestedDate)
+    const startBase = parse(dayEntry.start, 'HH:mm', requestedDate)
+    const endBase = parse(dayEntry.end, 'HH:mm', requestedDate)
     const slots = []
     let cursor = startBase
     while (isBefore(addMinutes(cursor, service.durationMinutes), endBase) ||
@@ -107,9 +108,8 @@ router.patch('/:id/availability', requireAuth, async (req, res, next) => {
       return res.status(403).json({ message: "Not authorised to update this stylist's availability" })
     }
 
-    const { workingDays, workingHours } = req.body
-    if (workingDays !== undefined) stylist.workingDays = workingDays
-    if (workingHours !== undefined) stylist.workingHours = workingHours
+    const { schedule } = req.body
+    if (schedule !== undefined) stylist.schedule = schedule
     await stylist.save()
 
     res.json(stylist)
@@ -121,11 +121,11 @@ router.patch('/:id/availability', requireAuth, async (req, res, next) => {
 // POST /api/stylists — admin or owner
 router.post('/', requireAuth, requireRole('admin', 'owner'), async (req, res, next) => {
   try {
-    const { userId, bio, specialties, workingDays, workingHours } = req.body
+    const { userId, bio, specialties, schedule } = req.body
     if (!userId) return res.status(400).json({ message: 'userId is required' })
 
     await User.findByIdAndUpdate(userId, { role: 'stylist' })
-    const stylist = await Stylist.create({ userId, bio, specialties, workingDays, workingHours })
+    const stylist = await Stylist.create({ userId, bio, specialties, schedule })
     res.status(201).json(stylist)
   } catch (err) {
     next(err)

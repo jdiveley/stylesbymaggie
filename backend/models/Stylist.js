@@ -5,14 +5,21 @@ const stylistSchema = new mongoose.Schema({
   bio: { type: String, default: '' },
   specialties: [{ type: String }],
   profileImage: { type: String, default: null },
-  workingDays: {
-    type: [Number],
-    default: [1, 2, 3, 4, 5], // Mon–Fri
-    validate: { validator: (v) => v.every((d) => d >= 0 && d <= 6), message: 'Invalid day' },
-  },
-  workingHours: {
-    start: { type: String, default: '09:00' },
-    end: { type: String, default: '18:00' },
+  schedule: {
+    type: [
+      {
+        day:   { type: Number, required: true, min: 0, max: 6 },
+        start: { type: String, required: true, default: '09:00' },
+        end:   { type: String, required: true, default: '18:00' },
+      },
+    ],
+    default: [
+      { day: 1, start: '09:00', end: '18:00' },
+      { day: 2, start: '09:00', end: '18:00' },
+      { day: 3, start: '09:00', end: '18:00' },
+      { day: 4, start: '09:00', end: '18:00' },
+      { day: 5, start: '09:00', end: '18:00' },
+    ],
   },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true })
