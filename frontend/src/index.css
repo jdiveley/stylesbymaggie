@@ -10,3 +10,40 @@
   --color-gold-400: oklch(0.78 0.14   85);
   --color-gold-500: oklch(0.70 0.155  85);
 }
+
+body {
+  background-color: #0d1a0f;
+  color: white;
+}
+
+@keyframes scroll-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.services-ticker {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 16.67%,
+    black 83.33%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 16.67%,
+    black 83.33%,
+    transparent
+  );
+}
+
+.services-ticker-inner {
+  display: flex;
+  width: max-content;
+  animation: scroll-left 40s linear infinite;
+}
+
+.services-ticker-inner:hover {
+  animation-play-state: paused;
+}
