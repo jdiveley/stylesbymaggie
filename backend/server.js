@@ -34,6 +34,9 @@ app.use(helmet({
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       'img-src': ["'self'", 'data:', 'https://images.unsplash.com'],
+      'script-src': ["'self'", 'https://www.googletagmanager.com'],
+      'script-src-elem': ["'self'", 'https://www.googletagmanager.com'],
+      'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://analytics.google.com'],
     },
   },
 }))
