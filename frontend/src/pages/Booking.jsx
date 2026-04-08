@@ -36,7 +36,7 @@ const buildAllSlots = (stylist, durationMinutes, date) => {
 }
 
 // ── Shared input style ──────────────────────────────────────────────────────
-const inputCls = 'w-full px-3 py-2 border border-sage-600/30 bg-[#0d1a0f]/60 rounded-xl text-sm text-sage-100 placeholder-sage-600 focus:outline-none focus:border-sage-400/60'
+const inputCls = 'w-full px-4 py-2.5 border border-gray-300 bg-white rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sage-400'
 
 // ── Step indicator ──────────────────────────────────────────────────────────
 const StepIndicator = ({ steps, current }) => (

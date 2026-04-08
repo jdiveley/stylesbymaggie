@@ -43,7 +43,7 @@ export const ChangePassword = () => {
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-4 py-12">
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl w-full max-w-md p-8">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl w-full max-w-md p-8 text-gray-900">
         <h1 className="text-2xl font-bold text-sage-400 mb-1">Change Password</h1>
         <p className="text-gray-500 text-sm mb-8">
           {user?.name ? `Updating password for ${user.name}` : 'Update your account password'}
@@ -58,7 +58,7 @@ export const ChangePassword = () => {
               value={form.currentPassword}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm text-gray-900 bg-white placeholder-gray-400"
             />
           </div>
 
@@ -72,7 +72,7 @@ export const ChangePassword = () => {
               value={form.newPassword}
               onChange={handleChange}
               placeholder="At least 8 characters"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm text-gray-900 bg-white placeholder-gray-400"
             />
           </div>
 
@@ -85,7 +85,7 @@ export const ChangePassword = () => {
               value={form.confirm}
               onChange={handleChange}
               placeholder="••••••••"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sage-400 text-sm text-gray-900 bg-white placeholder-gray-400 ${
                 form.confirm && form.confirm !== form.newPassword
                   ? 'border-red-400'
                   : 'border-gray-300'

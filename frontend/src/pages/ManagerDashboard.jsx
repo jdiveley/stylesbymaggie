@@ -286,7 +286,7 @@ const AvailabilityPanel = ({ user }) => {
           <select
             value={selectedId}
             onChange={(e) => handleStylistChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
           >
             {stylists.map((s) => (
               <option key={s._id} value={s._id}>{s.userId?.name ?? 'Stylist'}</option>
@@ -322,7 +322,7 @@ const AvailabilityPanel = ({ user }) => {
             type="time"
             value={form.workingHours.start}
             onChange={(e) => setForm((f) => ({ ...f, workingHours: { ...f.workingHours, start: e.target.value } }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
           />
         </div>
         <div>
@@ -331,7 +331,7 @@ const AvailabilityPanel = ({ user }) => {
             type="time"
             value={form.workingHours.end}
             onChange={(e) => setForm((f) => ({ ...f, workingHours: { ...f.workingHours, end: e.target.value } }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
           />
         </div>
       </div>
@@ -448,12 +448,12 @@ const ServicesPanel = () => {
               placeholder="Service name"
               value={addForm.name}
               onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
             />
             <select
               value={addForm.category}
               onChange={(e) => setAddForm((f) => ({ ...f, category: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
             >
               {['cut', 'color', 'treatment', 'styling', 'other'].map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -466,7 +466,7 @@ const ServicesPanel = () => {
               placeholder="Duration (minutes)"
               value={addForm.durationMinutes}
               onChange={(e) => setAddForm((f) => ({ ...f, durationMinutes: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
             />
             <input
               required
@@ -475,14 +475,14 @@ const ServicesPanel = () => {
               placeholder="Price (cents, e.g. 4500 = $45)"
               value={addForm.priceCents}
               onChange={(e) => setAddForm((f) => ({ ...f, priceCents: e.target.value }))}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
             />
           </div>
           <input
             placeholder="Description (optional)"
             value={addForm.description}
             onChange={(e) => setAddForm((f) => ({ ...f, description: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
           />
           <button
             type="submit"
@@ -514,7 +514,7 @@ const ServicesPanel = () => {
                       <input
                         value={editForm.name}
                         onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-sage-400"
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-sage-400"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -523,7 +523,7 @@ const ServicesPanel = () => {
                         min="1"
                         value={editForm.durationMinutes}
                         onChange={(e) => setEditForm((f) => ({ ...f, durationMinutes: e.target.value }))}
-                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-sage-400"
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-sage-400"
                       />
                       <span className="text-xs text-gray-400 ml-1">min</span>
                     </td>
@@ -533,7 +533,7 @@ const ServicesPanel = () => {
                         min="0"
                         value={editForm.priceCents}
                         onChange={(e) => setEditForm((f) => ({ ...f, priceCents: e.target.value }))}
-                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-sage-400"
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-sage-400"
                       />
                       <span className="text-xs text-gray-400 ml-1">¢</span>
                     </td>
@@ -541,7 +541,7 @@ const ServicesPanel = () => {
                       <select
                         value={editForm.category}
                         onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}
-                        className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-sage-400"
+                        className="px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-sage-400"
                       >
                         {['cut', 'color', 'treatment', 'styling', 'other'].map((c) => (
                           <option key={c} value={c}>{c}</option>
@@ -700,14 +700,14 @@ const ContentPanel = () => {
                 rows={4}
                 value={drafts[key] ?? ''}
                 onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sage-400 resize-y"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400 resize-y"
               />
             ) : (
               <input
                 type="text"
                 value={drafts[key] ?? ''}
                 onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sage-400"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
               />
             )}
             {key.includes('stat_') && (

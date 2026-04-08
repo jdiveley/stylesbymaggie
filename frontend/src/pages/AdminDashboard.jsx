@@ -105,14 +105,14 @@ const ServicesPanel = () => {
               type={type}
               value={form[key]}
               onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400"
             />
           </div>
         ))}
         <div>
           <label className="text-xs font-medium text-gray-600 block mb-1">Category</label>
           <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400">
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
@@ -198,7 +198,7 @@ const BookingsPanel = () => {
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold text-gray-700">All Bookings</h3>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400">
           <option value="">All Statuses</option>
           {['pending','confirmed','completed','cancelled','no-show'].map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
@@ -231,7 +231,7 @@ const BookingsPanel = () => {
                       <select
                         value={b.status}
                         onChange={(e) => updateStatus(b._id, e.target.value)}
-                        className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none"
+                        className="text-xs border border-gray-200 rounded px-2 py-1 text-gray-900 bg-white focus:outline-none"
                       >
                         {['pending','confirmed','completed','cancelled','no-show'].map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
@@ -296,7 +296,7 @@ const UsersPanel = () => {
                     <select
                       value={u.role}
                       onChange={(e) => changeRole(u._id, e.target.value)}
-                      className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none"
+                      className="text-xs border border-gray-200 rounded px-2 py-1 text-gray-900 bg-white focus:outline-none"
                     >
                       <option value="customer">customer</option>
                       <option value="stylist">stylist</option>
@@ -460,19 +460,19 @@ const StylistsPanel = () => {
           {form.mode === 'new' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input required placeholder="Full name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
               <input placeholder="Username" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
               <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
               <input required type="password" placeholder="Temporary password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
             </div>
           ) : (
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Select existing user</label>
               <select required value={form.existingUserId} onChange={(e) => setForm((f) => ({ ...f, existingUserId: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400">
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400">
                 <option value="">— choose a user —</option>
                 {users.map((u) => (
                   <option key={u._id} value={u._id}>{u.name} ({u.email ?? u.username})</option>
@@ -485,9 +485,9 @@ const StylistsPanel = () => {
           <div className="border-t border-sage-200 pt-3 space-y-3">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Stylist Profile</p>
             <textarea placeholder="Bio (optional)" value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none" />
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none" />
             <input placeholder="Specialties (comma-separated)" value={form.specialties} onChange={(e) => setForm((f) => ({ ...f, specialties: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
             <div>
               <p className="text-xs font-medium text-gray-600 mb-1">Working Days</p>
               <div className="flex gap-2 flex-wrap">
@@ -505,12 +505,12 @@ const StylistsPanel = () => {
               <div>
                 <label className="text-xs font-medium text-gray-600 block mb-1">Start Time</label>
                 <input type="time" value={form.startTime} onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-600 block mb-1">End Time</label>
                 <input type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
               </div>
             </div>
           </div>
@@ -533,9 +533,9 @@ const StylistsPanel = () => {
                 <div className="space-y-3">
                   <p className="font-semibold text-gray-800">{s.userId?.name}</p>
                   <textarea placeholder="Bio" value={editForm.bio} onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))} rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400 resize-none" />
                   <input placeholder="Specialties (comma-separated)" value={editForm.specialties} onChange={(e) => setEditForm((f) => ({ ...f, specialties: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
                   <div>
                     <p className="text-xs font-medium text-gray-600 mb-1">Working Days</p>
                     <div className="flex gap-2 flex-wrap">
@@ -553,12 +553,12 @@ const StylistsPanel = () => {
                     <div>
                       <label className="text-xs font-medium text-gray-600 block mb-1">Start Time</label>
                       <input type="time" value={editForm.startTime} onChange={(e) => setEditForm((f) => ({ ...f, startTime: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-600 block mb-1">End Time</label>
                       <input type="time" value={editForm.endTime} onChange={(e) => setEditForm((f) => ({ ...f, endTime: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-sage-400" />
                     </div>
                   </div>
                   <div className="flex gap-2">
