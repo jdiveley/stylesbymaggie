@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../lib/axios'
 
 // Curated Unsplash hairstyle photos per service name (lowercase) and category
@@ -38,23 +38,27 @@ const getPhoto = (service) => {
   return SERVICE_PHOTOS[key] || CATEGORY_PHOTOS[service.category] || CATEGORY_PHOTOS.cut
 }
 
-const ServiceCard = ({ service }) => (
-  <div className="flex-shrink-0 w-60 rounded-2xl overflow-hidden bg-[#111f13]/90 border border-sage-600/25 shadow-xl mx-3">
-    <div className="h-36 overflow-hidden">
+const ServiceCard = ({ service, onBook }) => (
+  <div
+    onClick={() => onBook(service)}
+    className="flex-shrink-0 w-60 rounded-2xl overflow-hidden bg-[#111f13]/90 border border-sage-600/25 shadow-xl mx-3 cursor-pointer group hover:-translate-y-1 transition-all duration-300"
+  >
+    <div className="h-36 overflow-hidden relative">
       <img
         src={getPhoto(service)}
         alt={service.name}
-        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         loading="lazy"
         onError={(e) => { e.currentTarget.style.display = 'none' }}
       />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#111f13]/50 to-transparent" />
     </div>
     <div className="p-4">
       <h3 className="text-sage-50 font-semibold text-sm leading-snug mb-1">{service.name}</h3>
       <p className="text-sage-300/60 text-xs mb-3 line-clamp-2 leading-relaxed">{service.description}</p>
       <div className="flex items-center justify-between">
         <span className="text-gold-400 font-bold text-sm">${(service.priceCents / 100).toFixed(0)}</span>
-        <span className="text-sage-500 text-xs">{service.durationMinutes} min</span>
+        <span className="text-sage-400/70 text-xs group-hover:text-gold-400/80 transition-colors">Book →</span>
       </div>
     </div>
   </div>
@@ -62,12 +66,18 @@ const ServiceCard = ({ service }) => (
 
 export const Home = () => {
   const [services, setServices] = useState(FALLBACK_SERVICES)
+  const navigate = useNavigate()
 
   useEffect(() => {
     api.get('/services')
       .then(res => { if (res.data?.length) setServices(res.data) })
       .catch(() => {})
   }, [])
+
+  // Navigate to booking (ProtectedRoute handles login redirect automatically)
+  const handleBookService = (service) => {
+    navigate('/book', { state: { serviceId: service._id } })
+  }
 
   // Duplicate for seamless infinite scroll
   const ticker = [...services, ...services]
@@ -169,7 +179,7 @@ export const Home = () => {
         <div className="services-ticker overflow-hidden">
           <div className="services-ticker-inner py-2">
             {ticker.map((service, i) => (
-              <ServiceCard key={`${service._id}-${i}`} service={service} />
+              <ServiceCard key={`${service._id}-${i}`} service={service} onBook={handleBookService} />
             ))}
           </div>
         </div>
