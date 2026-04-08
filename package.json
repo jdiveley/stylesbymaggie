@@ -1,0 +1,14 @@
+{
+  "name": "stylesbymaggie",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "npm ci --prefix frontend && npm run build --prefix frontend",
+    "start": "npm ci --prefix backend --omit=dev && node backend/server.js",
+    "dev": "npm run dev --prefix backend"
+  }
+}
