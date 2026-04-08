@@ -35,10 +35,10 @@ app.use(helmet({
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       'img-src': ["'self'", 'data:', 'https://images.unsplash.com'],
-      'script-src': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com', 'https://js.stripe.com'],
-      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com', 'https://js.stripe.com'],
-      'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://analytics.google.com', 'https://www.googletagmanager.com', 'https://www.google.com', 'https://api.stripe.com'],
-      'frame-src': ["'self'", 'https://www.googletagmanager.com', 'https://js.stripe.com', 'https://hooks.stripe.com'],
+      'script-src': ["'self'", "'unsafe-inline'", 'https://accounts.google.com', 'https://www.googletagmanager.com', 'https://js.stripe.com'],
+      'script-src-elem': ["'self'", "'unsafe-inline'", 'https://accounts.google.com', 'https://www.googletagmanager.com', 'https://js.stripe.com'],
+      'connect-src': ["'self'", 'https://accounts.google.com', 'https://www.google-analytics.com', 'https://analytics.google.com', 'https://www.googletagmanager.com', 'https://www.google.com', 'https://api.stripe.com'],
+      'frame-src': ["'self'", 'https://accounts.google.com', 'https://www.googletagmanager.com', 'https://js.stripe.com', 'https://hooks.stripe.com'],
     },
   },
 }))
