@@ -50,7 +50,7 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 const distPath = join(__dirname, '../frontend/dist')
 if (existsSync(distPath)) {
   app.use(express.static(distPath))
-  app.get('*', (_req, res) => res.sendFile(join(distPath, 'index.html')))
+  app.get('/{*splat}', (_req, res) => res.sendFile(join(distPath, 'index.html')))
 }
 
 // Global error handler
