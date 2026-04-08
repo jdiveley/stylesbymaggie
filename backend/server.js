@@ -36,7 +36,7 @@ app.use(helmet({
       'img-src': ["'self'", 'data:', 'https://images.unsplash.com'],
       'script-src': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'],
       'script-src-elem': ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com'],
-      'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://analytics.google.com', 'https://www.googletagmanager.com'],
+      'connect-src': ["'self'", 'https://www.google-analytics.com', 'https://analytics.google.com', 'https://www.googletagmanager.com', 'https://www.google.com'],
       'frame-src': ["'self'", 'https://www.googletagmanager.com'],
     },
   },
