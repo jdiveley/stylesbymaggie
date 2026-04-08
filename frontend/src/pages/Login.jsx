@@ -44,9 +44,9 @@ export const Login = () => {
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-4 py-12">
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl w-full max-w-md p-8">
-        <h1 className="text-3xl font-bold text-center text-sage-400 mb-2">Styles by Maggie</h1>
-        <p className="text-center text-gray-500 text-sm mb-8">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-gray-900">
+        <h1 className="text-3xl font-bold text-center text-sage-500 mb-2">Styles by Maggie</h1>
+        <p className="text-center text-gray-600 text-sm mb-8">
           {mode === 'login' ? 'Sign in to your account' : 'Create your account'}
         </p>
 
@@ -64,7 +64,7 @@ export const Login = () => {
 
         <div className="flex items-center gap-3 mb-6">
           <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400 uppercase tracking-wide">or</span>
+          <span className="text-xs text-gray-500 uppercase tracking-wide">or</span>
           <div className="flex-1 h-px bg-gray-200" />
         </div>
 
@@ -73,7 +73,7 @@ export const Login = () => {
           {mode === 'register' ? (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 select-none">Full Name</label>
                 <input
                   name="name"
                   type="text"
@@ -85,7 +85,7 @@ export const Login = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 select-none">Email</label>
                 <input
                   name="email"
                   type="email"
@@ -99,7 +99,7 @@ export const Login = () => {
             </>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Username or Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1 select-none">Username or Email</label>
               <input
                 name="identifier"
                 type="text"
@@ -113,7 +113,7 @@ export const Login = () => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1 select-none">Password</label>
             <input
               name="password"
               type="password"
@@ -135,7 +135,7 @@ export const Login = () => {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-600 mt-6">
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
           <button
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
@@ -145,7 +145,7 @@ export const Login = () => {
           </button>
         </p>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
+        <p className="text-center text-xs text-gray-500 mt-4">
           <Link to="/" className="hover:text-sage-400">← Back to home</Link>
         </p>
       </div>

@@ -11,6 +11,7 @@ import { existsSync } from 'fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
+import bcrypt from 'bcryptjs'
 import authRoutes from './routes/auth.js'
 import serviceRoutes from './routes/services.js'
 import stylistRoutes from './routes/stylists.js'
@@ -18,6 +19,7 @@ import bookingRoutes from './routes/bookings.js'
 import userRoutes from './routes/users.js'
 import statsRoutes from './routes/stats.js'
 import contentRoutes from './routes/content.js'
+import User from './models/User.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -61,10 +63,31 @@ app.use((err, _req, res, _next) => {
   })
 })
 
+async function seedDefaultUsers() {
+  const seeds = [
+    { username: 'jdiveley', name: 'J Diveley', role: 'admin',  password: 'changeme' },
+    { username: 'maggie',   name: 'Maggie',    role: 'owner',  password: 'changeme' },
+  ]
+  for (const s of seeds) {
+    const exists = await User.findOne({ username: s.username })
+    if (!exists) {
+      await User.create({
+        username: s.username,
+        name: s.name,
+        role: s.role,
+        passwordHash: await bcrypt.hash(s.password, 12),
+        isActive: true,
+      })
+      console.log(`Seeded user: ${s.username} (${s.role})`)
+    }
+  }
+}
+
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log('Connected to MongoDB')
+    await seedDefaultUsers()
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
   })
   .catch((err) => {
