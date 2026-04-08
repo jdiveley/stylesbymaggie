@@ -5,6 +5,11 @@ import morgan from 'morgan'
 import cors from 'cors'
 import helmet from 'helmet'
 import mongoSanitize from 'express-mongo-sanitize'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+import { existsSync } from 'fs'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 import authRoutes from './routes/auth.js'
 import serviceRoutes from './routes/services.js'
@@ -38,6 +43,13 @@ app.use('/api/stats', statsRoutes)
 app.use('/api/content', contentRoutes)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
+
+// Serve React SPA in production
+const distPath = join(__dirname, '../frontend/dist')
+if (existsSync(distPath)) {
+  app.use(express.static(distPath))
+  app.get('*', (_req, res) => res.sendFile(join(distPath, 'index.html')))
+}
 
 // Global error handler
 // eslint-disable-next-line no-unused-vars

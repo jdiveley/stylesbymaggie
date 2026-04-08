@@ -7,7 +7,7 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "build": "npm ci --prefix frontend && npm run build --prefix frontend",
+    "build": "npm ci --prefix frontend && VITE_API_BASE_URL=/api VITE_GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID npm run build --prefix frontend",
     "start": "npm ci --prefix backend --omit=dev && node backend/server.js",
     "dev": "npm run dev --prefix backend"
   }

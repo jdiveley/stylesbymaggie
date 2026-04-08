@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Testing
+
+There is no test suite. The backend `test` script is a placeholder that exits with an error.
+
 ## Project Overview
 
 **Styles by Maggie** — a hair salon website. React SPA frontend + Express/MongoDB backend.
