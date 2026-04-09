@@ -95,10 +95,18 @@ async function seedDefaultUsers() {
   }
 }
 
+async function fixSparseIndexes() {
+  // Drop non-sparse unique indexes so Mongoose recreates them with sparse:true
+  await User.collection.dropIndex('username_1').catch(() => {})
+  await User.collection.dropIndex('email_1').catch(() => {})
+  await User.syncIndexes()
+}
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(async () => {
     console.log('Connected to MongoDB')
+    await fixSparseIndexes()
     await seedDefaultUsers()
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
   })
